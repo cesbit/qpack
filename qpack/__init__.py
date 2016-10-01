@@ -1,4 +1,4 @@
-'''QPack - data serializer
+'''QPack - (de)serializer
 
 :copyright: 2016, Jeroen van der Heijden (Transceptor Technology)
 '''

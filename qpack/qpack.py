@@ -1,8 +1,12 @@
-'''QPack - data serializer
+'''QPack - (de)serializer
 
 :copyright: 2016, Jeroen van der Heijden (Transceptor Technology)
 '''
+import sys
 import struct
+
+# for being Python2 and Python3 compatible
+PY_CONVERT = ord if sys.version_info[0] == 2 else int
 
 SIZE8_T = struct.Struct('<B')
 SIZE16_T = struct.Struct('<H')
@@ -63,22 +67,22 @@ QP_CLOSE_ARRAY, N_CLOSE_ARRAY = b'\xfe', 254
 QP_CLOSE_MAP, N_CLOSE_MAP = b'\xff', 255
 
 _RAW_MAP = {
-    QP_RAW8[0]: SIZE8_T,
-    QP_RAW16[0]: SIZE16_T,
-    QP_RAW32[0]: SIZE32_T,
-    QP_RAW64[0]: SIZE64_T}
+    ord(QP_RAW8): SIZE8_T,
+    ord(QP_RAW16): SIZE16_T,
+    ord(QP_RAW32): SIZE32_T,
+    ord(QP_RAW64): SIZE64_T}
 
 _NUMBER_MAP = {
-    QP_INT8[0]: INT8_T,
-    QP_INT16[0]: INT16_T,
-    QP_INT32[0]: INT32_T,
-    QP_INT64[0]: INT64_T,
-    QP_DOUBLE[0]: DOUBLE}
+    ord(QP_INT8): INT8_T,
+    ord(QP_INT16): INT16_T,
+    ord(QP_INT32): INT32_T,
+    ord(QP_INT64): INT64_T,
+    ord(QP_DOUBLE): DOUBLE}
 
 _SIMPLE_MAP = {
-    QP_BOOL_TRUE[0]: True,
-    QP_BOOL_FALSE[0]: False,
-    QP_NULL[0]: None}
+    ord(QP_BOOL_TRUE): True,
+    ord(QP_BOOL_FALSE): False,
+    ord(QP_NULL): None}
 
 
 def _pack(obj, container):
@@ -201,7 +205,7 @@ def _pack(obj, container):
 
 
 def _unpack(qp, pos, end, decode=None):
-    tp = qp[pos]
+    tp = PY_CONVERT(qp[pos])
     pos += 1
     if tp < 64:
         return pos, tp
@@ -267,7 +271,6 @@ def _unpack(qp, pos, end, decode=None):
 def packb(obj):
     container = []
     _pack(obj, container)
-
     return b''.join(container)
 
 
@@ -276,7 +279,6 @@ def unpackb(qp, decode=None):
 
 
 if __name__ == '__main__':
-
     pass
 
 
