@@ -15,7 +15,7 @@ Unpack
 ====
 
 Unpack serialized data. When decode is left None, each string
-will be returned as bytes. 
+will be returned as bytes.
 
 `qpack.unpackb(qp, decode=None)`
 
