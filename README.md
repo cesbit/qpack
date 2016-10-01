@@ -6,6 +6,11 @@ One key difference is the support for flexible maps and arrays which
 allows code to write directly to a qpack buffer without to need in
 front the size of a map or array.
 
+>Warning: 
+>--------
+>This is still a BETA version which means the qpack format
+>might change in the future.
+
 Pack
 ====
 
