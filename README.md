@@ -6,26 +6,42 @@ One key difference is the support for flexible maps and arrays which
 allows code to write directly to a qpack buffer without to need in
 front the size of a map or array.
 
->Warning: 
+>Warning:
 >--------
 >This is still a BETA version which means the qpack format
 >might change in the future.
 
+Installation
+------------
+
+From PyPI (recommend)
+
+```
+pip install siridb-connector
+```
+
+From source code
+
+```
+python setup.py install
+```
+
 Pack
-====
+----
 
 `qpack.packb(object)`
 
 Unpack
-====
+----
 
 Unpack serialized data. When decode is left None, each string
 will be returned as bytes.
 
 `qpack.unpackb(qp, decode=None)`
 
+
 Example
-=======
+-------
 
 ```python
 import qpack

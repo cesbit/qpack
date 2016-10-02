@@ -20,6 +20,7 @@ INT64_T = struct.Struct('<q')
 
 DOUBLE = struct.Struct('<d')
 
+QP_HOOK = b'\x7c'
 # Fixed integer lengths: b'\x00' - '\x3f'
 # Fixed negative integer lengths: b'\x40' - '\x7c'
 # Fixed doubles: -1.0 0.0 and 1.0  '\x7d', '\x7e', '\x7f'
@@ -99,7 +100,7 @@ def _pack(obj, container):
         if 64 > obj >= 0:
             container.append(struct.pack("B", obj))
             return
-        if 0 > obj >= -61:
+        if 0 > obj >= -60:
             container.append(struct.pack("B", 63 - obj))
             return
 
@@ -210,8 +211,12 @@ def _unpack(qp, pos, end, decode=None):
     if tp < 64:
         return pos, tp
 
-    if tp < 125:
+    if tp < 124:
         return pos, 63 - tp
+
+    if tp == QP_HOOK:
+        # This is reserved for an object hook.
+        return pos, 0
 
     if tp < 0x80:
         return pos, float(tp - 126)
@@ -252,14 +257,14 @@ def _unpack(qp, pos, end, decode=None):
 
     if tp == N_OPEN_ARRAY:
         qp_array = []
-        while pos < end and qp[pos] != N_CLOSE_ARRAY:
+        while pos < end and PY_CONVERT(qp[pos]) != N_CLOSE_ARRAY:
             pos, value = _unpack(qp, pos, end, decode)
             qp_array.append(value)
         return pos + 1, qp_array
 
     if tp == N_OPEN_MAP:
         qp_map = {}
-        while pos < end and qp[pos] != N_CLOSE_MAP:
+        while pos < end and PY_CONVERT(qp[pos]) != N_CLOSE_MAP:
             pos, key = _unpack(qp, pos, end, decode)
             pos, value = _unpack(qp, pos, end, decode)
             qp_map[key] = value
