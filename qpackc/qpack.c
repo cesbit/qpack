@@ -457,8 +457,6 @@ static int packb(PyObject * obj, packer_t * packer)
                 -1 : add_raw(packer, buffer, size);
     }
 
-
-
     return 0;
 }
 
