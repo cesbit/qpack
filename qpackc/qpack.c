@@ -7,8 +7,8 @@
 #include <Python.h>
 #include <inttypes.h>
 
-static const PyObject PY_ARRAY_CLOSE = {0};
-static const PyObject PY_MAP_CLOSE = {0};
+static PyObject PY_ARRAY_CLOSE = {0};
+static PyObject PY_MAP_CLOSE = {0};
 
 #define Py_QPackCHECK(obj) (obj == &PY_ARRAY_CLOSE || obj == &PY_MAP_CLOSE)
 
@@ -69,7 +69,8 @@ typedef enum
 typedef enum
 {
     DECODE_NONE,
-    DECODE_UTF8
+    DECODE_UTF8,
+    DECODE_LATIN1
 } decode_t;
 
 typedef struct
@@ -97,7 +98,7 @@ if (packer->len + LEN > packer->size)                                   \
 }
 
 #define UNPACK_CHECK_SZ(size)                                           \
-if ((*pt) + size >= end)                                                \
+if ((*pt) + size > end)                                                 \
 {                                                                       \
     PyErr_SetString(PyExc_ValueError, "unpackb() is missing data");     \
     return NULL;                                                        \
@@ -113,6 +114,9 @@ case DECODE_NONE:                                       \
     break;                                              \
 case DECODE_UTF8:                                       \
     obj = PyUnicode_DecodeUTF8(*pt, size, NULL);        \
+    break;                                              \
+case DECODE_LATIN1:                                     \
+    obj = PyUnicode_DecodeLatin1(*pt, size, NULL);      \
     break;                                              \
 }                                                       \
 (*pt) += size;                                          \
@@ -173,6 +177,10 @@ static packer_t * packer_new(void);
 static void packer_free(packer_t * packer);
 static int add_raw(packer_t * packer, const char * buffer, Py_ssize_t size);
 static int packb(PyObject * obj, packer_t * packer);
+static PyObject * unpackb(
+        char ** pt,
+        const char * const end,
+        decode_t decode);
 
 /* Module specification */
 static PyMethodDef module_methods[] =
@@ -517,7 +525,7 @@ static int packb(PyObject * obj, packer_t * packer)
 }
 
 static PyObject * unpackb(
-        const char ** pt,
+        char ** pt,
         const char * const end,
         decode_t decode)
 {
@@ -848,7 +856,7 @@ static PyObject * unpackb(
             obj = PyDict_New();
             if (obj != NULL)
             {
-                for (Py_ssize_t i = 0; i < size; i++)
+                while (size--)
                 {
                     UNPACK_CHECK_SZ(0)
 
@@ -883,8 +891,6 @@ static PyObject * unpackb(
                         Py_DECREF(obj);
                         return NULL;
                     }
-
-                    return obj;
                 }
             }
             return obj;
@@ -1042,16 +1048,19 @@ static PyObject * qpack_unpackb(
         PyObject * kwargs)
 {
     PyObject * obj;
+    PyObject * kw_decode;
+    PyObject * o_decode;
     PyObject * unpacked;
     Py_ssize_t size;
+    decode_t decode = DECODE_NONE;
 
     size = PyTuple_GET_SIZE(args);
 
-    if (size == 0)
+    if (size != 1)
     {
         PyErr_SetString(
                 PyExc_TypeError,
-                "unpackb(), missing 1 required positional argument: 'bytes'");
+                "unpackb(), exactly one positional argument is expected");
         return NULL;
     }
 
@@ -1064,6 +1073,56 @@ static PyObject * qpack_unpackb(
                 "unpackb(), a bytes-like object is required");
         return NULL;
     }
+
+    if (kwargs)
+    {
+        kw_decode = Py_BuildValue("s", "decode");
+        o_decode = PyDict_GetItem(kwargs, kw_decode);
+        Py_DECREF(kw_decode);
+
+        if (o_decode == NULL)
+        {
+            PyErr_SetString(
+                    PyExc_TypeError,
+                    "unpackb() got an unexpected keyword argument");
+            return NULL;
+        }
+
+        if (    PyUnicode_CompareWithASCIIString(o_decode, "utf-8") ||
+                PyUnicode_CompareWithASCIIString(o_decode, "UTF-8") ||
+                PyUnicode_CompareWithASCIIString(o_decode, "Utf-8") ||
+                PyUnicode_CompareWithASCIIString(o_decode, "utf8") ||
+                PyUnicode_CompareWithASCIIString(o_decode, "UTF8") ||
+                PyUnicode_CompareWithASCIIString(o_decode, "Utf8"))
+        {
+            decode = DECODE_UTF8;
+        }
+        else if(PyUnicode_CompareWithASCIIString(o_decode, "latin-1") ||
+                PyUnicode_CompareWithASCIIString(o_decode, "LATIN-1") ||
+                PyUnicode_CompareWithASCIIString(o_decode, "Latin-1") ||
+                PyUnicode_CompareWithASCIIString(o_decode, "latin1") ||
+                PyUnicode_CompareWithASCIIString(o_decode, "LATIN1") ||
+                PyUnicode_CompareWithASCIIString(o_decode, "Latin1"))
+        {
+            decode = DECODE_LATIN1;
+        }
+        else
+        {
+            PyErr_SetString(
+                    PyExc_LookupError,
+                    "unpackb() unsupported encoding");
+            return NULL;
+        }
+    }
+
+    char * buffer;
+
+    if (PyBytes_AsStringAndSize(obj, &buffer, &size) == -1)
+    {
+        return NULL;  /* PyErr is set */
+    }
+
+    unpacked = unpackb(&buffer, buffer + size, decode);
 
     return unpacked;
 }
