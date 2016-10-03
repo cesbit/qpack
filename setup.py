@@ -5,7 +5,7 @@
 #       changelog + version
 #
 #   1. Create tag:
-#       git tag 0.0.3 -m "Adds a tag so we can put this new version on PyPI."
+#       git tag 0.0.4 -m "Adds a tag so we can put this new version on PyPI."
 #
 #   2. Push tag:
 #       git push --tags origin master
@@ -27,23 +27,17 @@ module = Extension('qpack._qpack',
                     libraries = [],
                     sources = ['./qpack/_qpack.c'])
 
-f = open('README.md')
-long_desc = f.read()
-f.close()
-del f
-
 setup(
     name='qpack',
     packages=['qpack'],
-    version='0.0.3',
+    version='0.0.4',
     description='QPack (de)serializer',
     author='Jeroen van der Heijden',
     author_email='jeroen@transceptor.technology',
     url='https://github.com/transceptor-technology/qpack',
     ext_modules = [module],
-    download_url='https://github.com/transceptor-technology/qpack/qpack/0.0.3',
+    download_url='https://github.com/transceptor-technology/qpack/qpack/0.0.4',
     keywords=['serializer', 'deserializer'],
-    long_description = long_desc,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
