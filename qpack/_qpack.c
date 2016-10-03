@@ -6,6 +6,7 @@
  */
 #include <Python.h>
 #include <inttypes.h>
+#include <stddef.h>
 
 static PyObject PY_ARRAY_CLOSE = {0};
 static PyObject PY_MAP_CLOSE = {0};
@@ -1066,14 +1067,6 @@ static PyObject * _qpack_unpackb(
 
     obj = PyTuple_GET_ITEM(args, 0);
 
-    if (!PyBytes_Check(obj))
-    {
-        PyErr_SetString(
-                PyExc_TypeError,
-                "unpackb(), a bytes-like object is required");
-        return NULL;
-    }
-
     if (kwargs)
     {
         kw_decode = Py_BuildValue("s", "decode");
@@ -1127,10 +1120,27 @@ static PyObject * _qpack_unpackb(
 
     char * buffer;
 
-    if (PyBytes_AsStringAndSize(obj, &buffer, &size) == -1)
+    if (PyBytes_Check(obj))
     {
-        return NULL;  /* PyErr is set */
+        if (PyBytes_AsStringAndSize(obj, &buffer, &size) == -1)
+        {
+            return NULL;  /* PyErr is set */
+        }
     }
+    else if (PyByteArray_Check(obj))
+    {
+        buffer = PyByteArray_AS_STRING(obj);
+        size = PyByteArray_GET_SIZE(obj);
+    }
+    else
+    {
+        PyErr_SetString(
+                PyExc_TypeError,
+                "unpackb(), a bytes-like object is required");
+        return NULL;
+    }
+
+
 
     unpacked = unpackb(&buffer, buffer + size, decode);
 

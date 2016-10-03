@@ -2,6 +2,9 @@
 
 Changelog
 
+Version 0.0.5
+    - Support for Byte-Array in unpack() method.
+
 Version 0.0.4
     - Fixed bug in installing this package using pip.
 
@@ -22,7 +25,7 @@ try:
 except ImportError as ex:
     from .fallback import packb, unpackb
 
-__version_info__ = (0, 0, 4)
+__version_info__ = (0, 0, 5)
 __version__ = '.'.join(map(str, __version_info__))
 __all__ = ['packb', 'unpackb']
 

@@ -5,7 +5,7 @@
 #       changelog + version
 #
 #   1. Create tag:
-#       git tag 0.0.4 -m "Adds a tag so we can put this new version on PyPI."
+#       git tag 0.0.5 -m "Adds a tag so we can put this new version on PyPI."
 #
 #   2. Push tag:
 #       git push --tags origin master
@@ -36,7 +36,7 @@ setup(
     author_email='jeroen@transceptor.technology',
     url='https://github.com/transceptor-technology/qpack',
     ext_modules = [module],
-    download_url='https://github.com/transceptor-technology/qpack/qpack/0.0.4',
+    download_url='https://github.com/transceptor-technology/qpack/qpack/0.0.5',
     keywords=['serializer', 'deserializer'],
     classifiers=[
         'Development Status :: 4 - Beta',

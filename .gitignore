@@ -10,5 +10,5 @@ __pycache__/
 test.py
 *.so
 *.o
-./build/
-./test/
+build/
+test/
