@@ -10,3 +10,4 @@ __pycache__/
 test.py
 *.so
 *.o
+./build/
