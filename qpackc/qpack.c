@@ -7,6 +7,11 @@
 #include <Python.h>
 #include <inttypes.h>
 
+static const PyObject PY_ARRAY_CLOSE = {0};
+static const PyObject PY_MAP_CLOSE = {0};
+
+#define Py_QPackCHECK(obj) (obj == &PY_ARRAY_CLOSE || obj == &PY_MAP_CLOSE)
+
 typedef enum
 {
     /*
@@ -61,6 +66,12 @@ typedef enum
     QP_MAP_CLOSE,       // close map
 } qp_types_t;
 
+typedef enum
+{
+    DECODE_NONE,
+    DECODE_UTF8
+} decode_t;
+
 typedef struct
 {
     char * buffer;
@@ -85,7 +96,52 @@ if (packer->len + LEN > packer->size)                                   \
     packer->buffer = tmp;                                               \
 }
 
+#define UNPACK_CHECK_SZ(size)                                           \
+if ((*pt) + size >= end)                                                \
+{                                                                       \
+    PyErr_SetString(PyExc_ValueError, "unpackb() is missing data");     \
+    return NULL;                                                        \
+}
 
+
+#define UNPACK_RAW(size)                                \
+UNPACK_CHECK_SZ(size)                                   \
+switch(decode)                                          \
+{                                                       \
+case DECODE_NONE:                                       \
+    obj = PyBytes_FromStringAndSize(*pt, size);         \
+    break;                                              \
+case DECODE_UTF8:                                       \
+    obj = PyUnicode_DecodeUTF8(*pt, size, NULL);        \
+    break;                                              \
+}                                                       \
+(*pt) += size;                                          \
+return obj;
+
+#define UNPACK_FIXED_RAW(uintx_t)                       \
+{                                                       \
+    UNPACK_CHECK_SZ(sizeof(uintx_t))                    \
+    Py_ssize_t size = (Py_ssize_t) *((uintx_t *) *pt);  \
+    (*pt) += sizeof(uintx_t);                           \
+    UNPACK_RAW(size)                                    \
+}
+
+#define UNPACK_INT(intx_t)                              \
+{                                                       \
+    UNPACK_CHECK_SZ(sizeof(intx_t))                     \
+    long long integer = (long long) *((intx_t *) *pt);  \
+    (*pt) += sizeof(intx_t);                            \
+    obj = PyLong_FromLongLong(integer);                 \
+    return obj;                                         \
+}
+
+#define SET_UNEXPECTED(obj)                                                 \
+if (Py_QPackCHECK(obj))                                                     \
+{                                                                           \
+    PyErr_SetString(                                                        \
+            PyExc_ValueError,                                               \
+            "unpackb() found an unexpected array or map close character");  \
+}
 
 /* Documentation strings */
 static char module_docstring[] =
@@ -460,6 +516,489 @@ static int packb(PyObject * obj, packer_t * packer)
     return 0;
 }
 
+static PyObject * unpackb(
+        const char ** pt,
+        const char * const end,
+        decode_t decode)
+{
+    PyObject * obj;
+
+    uint8_t tp = **pt;
+    (*pt)++;
+
+    switch (tp)
+    {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+    case 15:
+    case 16:
+    case 17:
+    case 18:
+    case 19:
+    case 20:
+    case 21:
+    case 22:
+    case 23:
+    case 24:
+    case 25:
+    case 26:
+    case 27:
+    case 28:
+    case 29:
+    case 30:
+    case 31:
+    case 32:
+    case 33:
+    case 34:
+    case 35:
+    case 36:
+    case 37:
+    case 38:
+    case 39:
+    case 40:
+    case 41:
+    case 42:
+    case 43:
+    case 44:
+    case 45:
+    case 46:
+    case 47:
+    case 48:
+    case 49:
+    case 50:
+    case 51:
+    case 52:
+    case 53:
+    case 54:
+    case 55:
+    case 56:
+    case 57:
+    case 58:
+    case 59:
+    case 60:
+    case 61:
+    case 62:
+    case 63:
+        obj = PyLong_FromLong((long) tp);
+        return obj;
+
+    case 64:
+    case 65:
+    case 66:
+    case 67:
+    case 68:
+    case 69:
+    case 70:
+    case 71:
+    case 72:
+    case 73:
+    case 74:
+    case 75:
+    case 76:
+    case 77:
+    case 78:
+    case 79:
+    case 80:
+    case 81:
+    case 82:
+    case 83:
+    case 84:
+    case 85:
+    case 86:
+    case 87:
+    case 88:
+    case 89:
+    case 90:
+    case 91:
+    case 92:
+    case 93:
+    case 94:
+    case 95:
+    case 96:
+    case 97:
+    case 98:
+    case 99:
+    case 100:
+    case 101:
+    case 102:
+    case 103:
+    case 104:
+    case 105:
+    case 106:
+    case 107:
+    case 108:
+    case 109:
+    case 110:
+    case 111:
+    case 112:
+    case 113:
+    case 114:
+    case 115:
+    case 116:
+    case 117:
+    case 118:
+    case 119:
+    case 120:
+    case 121:
+    case 122:
+    case 123:
+        obj = PyLong_FromLong((long) 63 - tp);
+        return obj;
+
+    case 124:
+        /* This is actually reserved for an object hook but
+         * return None as this is not implemented yet */
+        Py_INCREF(Py_None);
+        return Py_None;
+
+    case 125:
+        obj = PyFloat_FromDouble(-1.0);
+        return obj;
+
+    case 126:
+        obj = PyFloat_FromDouble(0.0);
+        return obj;
+
+    case 127:
+        obj = PyFloat_FromDouble(1.0);
+        return obj;
+
+    case 128:
+    case 129:
+    case 130:
+    case 131:
+    case 132:
+    case 133:
+    case 134:
+    case 135:
+    case 136:
+    case 137:
+    case 138:
+    case 139:
+    case 140:
+    case 141:
+    case 142:
+    case 143:
+    case 144:
+    case 145:
+    case 146:
+    case 147:
+    case 148:
+    case 149:
+    case 150:
+    case 151:
+    case 152:
+    case 153:
+    case 154:
+    case 155:
+    case 156:
+    case 157:
+    case 158:
+    case 159:
+    case 160:
+    case 161:
+    case 162:
+    case 163:
+    case 164:
+    case 165:
+    case 166:
+    case 167:
+    case 168:
+    case 169:
+    case 170:
+    case 171:
+    case 172:
+    case 173:
+    case 174:
+    case 175:
+    case 176:
+    case 177:
+    case 178:
+    case 179:
+    case 180:
+    case 181:
+    case 182:
+    case 183:
+    case 184:
+    case 185:
+    case 186:
+    case 187:
+    case 188:
+    case 189:
+    case 190:
+    case 191:
+    case 192:
+    case 193:
+    case 194:
+    case 195:
+    case 196:
+    case 197:
+    case 198:
+    case 199:
+    case 200:
+    case 201:
+    case 202:
+    case 203:
+    case 204:
+    case 205:
+    case 206:
+    case 207:
+    case 208:
+    case 209:
+    case 210:
+    case 211:
+    case 212:
+    case 213:
+    case 214:
+    case 215:
+    case 216:
+    case 217:
+    case 218:
+    case 219:
+    case 220:
+    case 221:
+    case 222:
+    case 223:
+    case 224:
+    case 225:
+    case 226:
+    case 227:
+        {
+            Py_ssize_t size = tp - 128;
+            UNPACK_RAW(size)
+        }
+    case 228:
+        UNPACK_FIXED_RAW(uint8_t)
+    case 229:
+        UNPACK_FIXED_RAW(uint16_t)
+    case 230:
+        UNPACK_FIXED_RAW(uint32_t)
+    case 231:
+        UNPACK_FIXED_RAW(uint64_t)
+
+    case 232:
+        UNPACK_INT(int8_t)
+    case 233:
+        UNPACK_INT(int16_t)
+    case 234:
+        UNPACK_INT(int32_t)
+    case 235:
+        UNPACK_INT(int64_t)
+
+    case 236:
+        UNPACK_CHECK_SZ(sizeof(double))
+        obj = PyFloat_FromDouble((double) *((double *) *pt));
+        (*pt) += sizeof(double);
+        return obj;
+
+    case 237:
+    case 238:
+    case 239:
+    case 240:
+    case 241:
+    case 242:
+        {
+            PyObject * o;
+            Py_ssize_t size = tp - 237;
+            obj = PyList_New(size);
+            if (obj != NULL)
+            {
+                for (Py_ssize_t i = 0; i < size; i++)
+                {
+                    UNPACK_CHECK_SZ(0)
+
+                    o = unpackb(pt, end, decode);
+
+                    if (o == NULL || Py_QPackCHECK(o))
+                    {
+                        SET_UNEXPECTED(o)
+                        Py_DECREF(obj);
+                        return NULL;
+                    }
+
+                    PyList_SET_ITEM(obj, i, o);
+                }
+            }
+            return obj;
+        }
+    case 243:
+    case 244:
+    case 245:
+    case 246:
+    case 247:
+    case 248:
+        {
+            int rc;
+            PyObject * key;
+            PyObject * value;
+            Py_ssize_t size = tp - 243;
+            obj = PyDict_New();
+            if (obj != NULL)
+            {
+                for (Py_ssize_t i = 0; i < size; i++)
+                {
+                    UNPACK_CHECK_SZ(0)
+
+                    key = unpackb(pt, end, decode);
+
+                    if (key == NULL || Py_QPackCHECK(key))
+                    {
+                        SET_UNEXPECTED(key)
+                        Py_DECREF(obj);
+                        return NULL;
+                    }
+
+                    UNPACK_CHECK_SZ(0)
+
+                    value = unpackb(pt, end, decode);
+
+                    if (value == NULL || Py_QPackCHECK(value))
+                    {
+                        SET_UNEXPECTED(value)
+                        Py_DECREF(key);
+                        Py_DECREF(obj);
+                        return NULL;
+                    }
+
+                    rc = PyDict_SetItem(obj, key, value);
+
+                    Py_DECREF(key);
+                    Py_DECREF(value);
+
+                    if (rc == -1)
+                    {
+                        Py_DECREF(obj);
+                        return NULL;
+                    }
+
+                    return obj;
+                }
+            }
+            return obj;
+        }
+    case 249:
+        Py_INCREF(Py_True);
+        return Py_True;
+
+    case 250:
+        Py_INCREF(Py_False);
+        return Py_False;
+
+    case 251:
+        Py_INCREF(Py_None);
+        return Py_None;
+
+    case 252:
+        {
+            int rc;
+            PyObject * o;
+            obj = PyList_New(0);
+            if (obj != NULL)
+            {
+                while (*pt < end)
+                {
+                    UNPACK_CHECK_SZ(0)
+
+                    o = unpackb(pt, end, decode);
+
+                    if (o == NULL || o == &PY_MAP_CLOSE)
+                    {
+                        SET_UNEXPECTED(o)
+                        Py_DECREF(obj);
+                        return NULL;
+                    }
+                    else if (o == &PY_ARRAY_CLOSE)
+                    {
+                        break;
+                    }
+
+                    rc = PyList_Append(obj, o);
+
+                    Py_DECREF(o);
+
+                    if (rc == -1)
+                    {
+                        Py_DECREF(obj);
+                        return NULL;
+                    }
+                }
+            }
+            return obj;
+        }
+    case 253:
+        {
+            int rc;
+            PyObject * key;
+            PyObject * value;
+            obj = PyDict_New();
+            if (obj != NULL)
+            {
+                while (*pt < end)
+                {
+                    UNPACK_CHECK_SZ(0)
+
+                    key = unpackb(pt, end, decode);
+
+                    if (key == NULL || key == &PY_ARRAY_CLOSE)
+                    {
+                        SET_UNEXPECTED(key)
+                        Py_DECREF(obj);
+                        return NULL;
+                    }
+                    else if (value == &PY_MAP_CLOSE)
+                    {
+                        break;
+                    }
+
+                    UNPACK_CHECK_SZ(0)
+
+                    value = unpackb(pt, end, decode);
+
+                    if (value == NULL || Py_QPackCHECK(value))
+                    {
+                        SET_UNEXPECTED(value)
+                        Py_DECREF(key);
+                        Py_DECREF(obj);
+                        return NULL;
+                    }
+
+                    rc = PyDict_SetItem(obj, key, value);
+
+                    Py_DECREF(key);
+                    Py_DECREF(value);
+
+                    if (rc == -1)
+                    {
+                        Py_DECREF(obj);
+                        return NULL;
+                    }
+                }
+            }
+            return obj;
+        }
+    case 254:
+        return &PY_ARRAY_CLOSE;
+    case 255:
+        return &PY_MAP_CLOSE;
+
+    }
+
+    return NULL;
+}
+
 static PyObject * qpack_packb(
         PyObject * self,
         PyObject * args,
@@ -490,7 +1029,6 @@ static PyObject * qpack_packb(
 
     obj = PyTuple_GET_ITEM(args, 0);
 
-
     packed = (packb(obj, packer)) ?
             NULL: PyBytes_FromStringAndSize(packer->buffer, packer->len);
 
@@ -503,9 +1041,29 @@ static PyObject * qpack_unpackb(
         PyObject * args,
         PyObject * kwargs)
 {
+    PyObject * obj;
     PyObject * unpacked;
+    Py_ssize_t size;
 
-    unpacked = NULL;
+    size = PyTuple_GET_SIZE(args);
+
+    if (size == 0)
+    {
+        PyErr_SetString(
+                PyExc_TypeError,
+                "unpackb(), missing 1 required positional argument: 'bytes'");
+        return NULL;
+    }
+
+    obj = PyTuple_GET_ITEM(args, 0);
+
+    if (!PyBytes_Check(obj))
+    {
+        PyErr_SetString(
+                PyExc_TypeError,
+                "unpackb(), a bytes-like object is required");
+        return NULL;
+    }
 
     return unpacked;
 }
