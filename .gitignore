@@ -7,8 +7,8 @@ __pycache__/
 .idea
 .cproject
 .settings/
-<<<<<<< HEAD
 test.py
 *.so
 *.o
 ./build/
+./test/

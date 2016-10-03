@@ -11,12 +11,12 @@
 #       git push --tags origin master
 #
 #   3. Upload your package to PyPI Test:
-#       python setup.py register -r pypitest
-#       python setup.py sdist upload -r pypitest
+#       python3 setup.py register -r pypitest
+#       python3 setup.py sdist upload -r pypitest
 #
 #   4. Upload to PyPI Live
-#       python setup.py register -r pypi
-#       python setup.py sdist upload -r pypi
+#       python3 setup.py register -r pypi
+#       python3 setup.py sdist upload -r pypi
 #
 
 from distutils.core import setup, Extension
