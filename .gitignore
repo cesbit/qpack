@@ -12,3 +12,4 @@ test.py
 *.o
 build/
 test/
+checklist.txt

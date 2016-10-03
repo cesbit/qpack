@@ -1,21 +1,7 @@
 '''QPack - (de)serializer
 
-Changelog
-
-Version 0.0.5
-    - Support for Byte-Array in unpack() method.
-
-Version 0.0.4
-    - Fixed bug in installing this package using pip.
-
-Version 0.0.3
-    - Added C module (Only Python3 support)
-
-Version 0.0.2
-    - Added support for hooks.
-    - Fixed Python 2 Compatibility bug.
-
 :copyright: 2016, Jeroen van der Heijden (Transceptor Technology)
+:license: MIT
 '''
 try:
     import qpack._qpack as _qpack
