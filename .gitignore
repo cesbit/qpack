@@ -7,3 +7,6 @@ __pycache__/
 .idea
 .cproject
 .settings/
+test.py
+*.so
+*.o
