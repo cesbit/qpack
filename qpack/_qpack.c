@@ -1,8 +1,8 @@
 /*
- * qpack.c
+ * _qpack.c
  *
  *  Created on: Oct 2, 2016
- *      Author: joente
+ *      Author: Jeroen van der Heijden
  */
 #include <Python.h>
 #include <inttypes.h>
@@ -152,22 +152,22 @@ static char module_docstring[] =
     "QPack - Python module in C";
 
 static char packb_docstring[] =
-    "Serialize a Python object to qpack format.";
+    "Serialize a Python object to QPack format.";
 
 static char unpackb_docstring[] =
-    "De-Serialize qpack data to a Python object.\n"
-    "\n"
-    "Keyword arguments:\n"
-    "    decode: Decode byte strings, for example to 'utf-8'.\n"
-    "            \n"
-    "            Default value: None";
+"De-serialize QPack data to a Python object.\n"
+"\n"
+"Keyword arguments:\n"
+"    decode: Decoding used for de-serializing QPack raw data.\n"
+"            When None, all raw data will be de-serialized to Python bytes.\n"
+"            (Default value: None)";
 
 /* Available functions */
-static PyObject * qpack_packb(
+static PyObject * _qpack_packb(
         PyObject * self,
         PyObject * args,
         PyObject * kwargs);
-static PyObject * qpack_unpackb(
+static PyObject * _qpack_unpackb(
         PyObject * self,
         PyObject * args,
         PyObject * kwargs);
@@ -187,13 +187,13 @@ static PyMethodDef module_methods[] =
 {
     {
             "_packb",
-            (PyCFunction)qpack_packb,
+            (PyCFunction)_qpack_packb,
             METH_VARARGS | METH_KEYWORDS,
             packb_docstring
     },
     {
             "_unpackb",
-            (PyCFunction)qpack_unpackb,
+            (PyCFunction)_qpack_unpackb,
             METH_VARARGS | METH_KEYWORDS,
             unpackb_docstring
     },
@@ -203,7 +203,7 @@ static PyMethodDef module_methods[] =
 #if PY_MAJOR_VERSION >= 3
     static struct PyModuleDef moduledef = {
         PyModuleDef_HEAD_INIT,
-        "qpack",           /* m_name */
+        "_qpack",          /* m_name */
         module_docstring,  /* m_doc */
         -1,                /* m_size */
         module_methods,    /* m_methods */
@@ -214,15 +214,15 @@ static PyMethodDef module_methods[] =
     };
 
     /* Initialize the module */
-    PyMODINIT_FUNC PyInit_qpack(void)
+    PyMODINIT_FUNC PyInit__qpack(void)
     {
         return PyModule_Create(&moduledef);
     }
 #else
-    PyMODINIT_FUNC initqpack(void)
+    PyMODINIT_FUNC init_qpack(void)
     {
         PyObject *m = Py_InitModule3(
-                "qpack",
+                "_qpack",
                 module_methods,
                 module_docstring);
         if (m == NULL) return;
@@ -1005,7 +1005,7 @@ static PyObject * unpackb(
     return NULL;
 }
 
-static PyObject * qpack_packb(
+static PyObject * _qpack_packb(
         PyObject * self,
         PyObject * args,
         PyObject * kwargs)
@@ -1042,7 +1042,7 @@ static PyObject * qpack_packb(
     return packed;
 }
 
-static PyObject * qpack_unpackb(
+static PyObject * _qpack_unpackb(
         PyObject * self,
         PyObject * args,
         PyObject * kwargs)
@@ -1088,29 +1088,39 @@ static PyObject * qpack_unpackb(
             return NULL;
         }
 
-        if (    PyUnicode_CompareWithASCIIString(o_decode, "utf-8") ||
-                PyUnicode_CompareWithASCIIString(o_decode, "UTF-8") ||
-                PyUnicode_CompareWithASCIIString(o_decode, "Utf-8") ||
-                PyUnicode_CompareWithASCIIString(o_decode, "utf8") ||
-                PyUnicode_CompareWithASCIIString(o_decode, "UTF8") ||
-                PyUnicode_CompareWithASCIIString(o_decode, "Utf8"))
+        if (PyUnicode_Check(o_decode))
         {
-            decode = DECODE_UTF8;
+            if (    PyUnicode_CompareWithASCIIString(o_decode, "utf-8") ||
+                    PyUnicode_CompareWithASCIIString(o_decode, "UTF-8") ||
+                    PyUnicode_CompareWithASCIIString(o_decode, "Utf-8") ||
+                    PyUnicode_CompareWithASCIIString(o_decode, "utf8") ||
+                    PyUnicode_CompareWithASCIIString(o_decode, "UTF8") ||
+                    PyUnicode_CompareWithASCIIString(o_decode, "Utf8"))
+            {
+                decode = DECODE_UTF8;
+            }
+            else if(PyUnicode_CompareWithASCIIString(o_decode, "latin-1") ||
+                    PyUnicode_CompareWithASCIIString(o_decode, "LATIN-1") ||
+                    PyUnicode_CompareWithASCIIString(o_decode, "Latin-1") ||
+                    PyUnicode_CompareWithASCIIString(o_decode, "latin1") ||
+                    PyUnicode_CompareWithASCIIString(o_decode, "LATIN1") ||
+                    PyUnicode_CompareWithASCIIString(o_decode, "Latin1"))
+            {
+                decode = DECODE_LATIN1;
+            }
+            else
+            {
+                PyErr_SetString(
+                        PyExc_LookupError,
+                        "unpackb() unsupported encoding");
+                return NULL;
+            }
         }
-        else if(PyUnicode_CompareWithASCIIString(o_decode, "latin-1") ||
-                PyUnicode_CompareWithASCIIString(o_decode, "LATIN-1") ||
-                PyUnicode_CompareWithASCIIString(o_decode, "Latin-1") ||
-                PyUnicode_CompareWithASCIIString(o_decode, "latin1") ||
-                PyUnicode_CompareWithASCIIString(o_decode, "LATIN1") ||
-                PyUnicode_CompareWithASCIIString(o_decode, "Latin1"))
-        {
-            decode = DECODE_LATIN1;
-        }
-        else
+        else if (o_decode != Py_None)
         {
             PyErr_SetString(
                     PyExc_LookupError,
-                    "unpackb() unsupported encoding");
+                    "unpackb() decode is expecting 'None' or a 'str' object");
             return NULL;
         }
     }
