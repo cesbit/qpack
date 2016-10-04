@@ -1,10 +1,13 @@
 from distutils.core import setup, Extension
 
-module = Extension('qpack._qpack',
-                    define_macros = [],
-                    include_dirs = ['./qpack'],
-                    libraries = [],
-                    sources = ['./qpack/_qpack.c'])
+module = Extension(
+    'qpack._qpack',
+    define_macros = [],
+    include_dirs = ['./qpack'],
+    libraries = [],
+    sources = ['./qpack/_qpack.c']
+)
+
 VERSION = '0.0.5'
 
 setup(
@@ -22,12 +25,12 @@ setup(
     keywords=['serializer', 'deserializer'],
     classifiers=[
         'Development Status :: 4 - Beta',
-        'Environment :: Web Environment',
+        'Environment :: Other Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
-        'Topic :: Database',
+        'Topic :: Software Development'
     ],
 )
