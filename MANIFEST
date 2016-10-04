@@ -4,3 +4,4 @@ setup.py
 ./qpack/_qpack.c
 qpack/__init__.py
 qpack/fallback.py
+test/test.py
