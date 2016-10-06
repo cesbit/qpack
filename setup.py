@@ -1,3 +1,4 @@
+import setuptools
 from distutils.core import setup, Extension
 
 module = Extension(
@@ -8,7 +9,7 @@ module = Extension(
     sources = ['./qpack/_qpack.c']
 )
 
-VERSION = '0.0.5'
+VERSION = '0.0.6'
 
 setup(
     name='qpack',

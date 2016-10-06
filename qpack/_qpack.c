@@ -8,6 +8,18 @@
 #include <inttypes.h>
 #include <stddef.h>
 
+#if PY_MAJOR_VERSION >= 3
+
+#define PY_COMPAT_COMPARE(obj, str) PyUnicode_CompareWithASCIIString(obj, str)
+#define PY_COMPAT_CHECK PyUnicode_Check
+
+#else
+
+#define PY_COMPAT_COMPARE(obj, str) strcmp(PyString_AsString(obj), str) == 0
+#define PY_COMPAT_CHECK PyString_Check
+
+#endif
+
 static PyObject PY_ARRAY_CLOSE = {0};
 static PyObject PY_MAP_CLOSE = {0};
 
@@ -506,12 +518,17 @@ static int packb(PyObject * obj, packer_t * packer)
         return 0;
     }
 
-    if (PyUnicode_Check(obj))
+    if (PY_COMPAT_CHECK(obj))
     {
         Py_ssize_t size;
+#if PY_MAJOR_VERSION >= 3
         char * raw = PyUnicode_AsUTF8AndSize(obj, &size);
-
         return (raw == NULL) ? -1 : add_raw(packer, raw, size);
+#else
+        char * raw;
+        return (PyString_AsStringAndSize(obj, &raw, &size) == -1) ?
+                -1 : add_raw(packer, raw, size);
+#endif
     }
 
     if (PyBytes_Check(obj))
@@ -1081,23 +1098,23 @@ static PyObject * _qpack_unpackb(
             return NULL;
         }
 
-        if (PyUnicode_Check(o_decode))
+        if (PY_COMPAT_CHECK(o_decode))
         {
-            if (    PyUnicode_CompareWithASCIIString(o_decode, "utf-8") ||
-                    PyUnicode_CompareWithASCIIString(o_decode, "UTF-8") ||
-                    PyUnicode_CompareWithASCIIString(o_decode, "Utf-8") ||
-                    PyUnicode_CompareWithASCIIString(o_decode, "utf8") ||
-                    PyUnicode_CompareWithASCIIString(o_decode, "UTF8") ||
-                    PyUnicode_CompareWithASCIIString(o_decode, "Utf8"))
+            if (    PY_COMPAT_COMPARE(o_decode, "utf-8") ||
+                    PY_COMPAT_COMPARE(o_decode, "UTF-8") ||
+                    PY_COMPAT_COMPARE(o_decode, "Utf-8") ||
+                    PY_COMPAT_COMPARE(o_decode, "utf8") ||
+                    PY_COMPAT_COMPARE(o_decode, "UTF8") ||
+                    PY_COMPAT_COMPARE(o_decode, "Utf8"))
             {
                 decode = DECODE_UTF8;
             }
-            else if(PyUnicode_CompareWithASCIIString(o_decode, "latin-1") ||
-                    PyUnicode_CompareWithASCIIString(o_decode, "LATIN-1") ||
-                    PyUnicode_CompareWithASCIIString(o_decode, "Latin-1") ||
-                    PyUnicode_CompareWithASCIIString(o_decode, "latin1") ||
-                    PyUnicode_CompareWithASCIIString(o_decode, "LATIN1") ||
-                    PyUnicode_CompareWithASCIIString(o_decode, "Latin1"))
+            else if(PY_COMPAT_COMPARE(o_decode, "latin-1") ||
+                    PY_COMPAT_COMPARE(o_decode, "LATIN-1") ||
+                    PY_COMPAT_COMPARE(o_decode, "Latin-1") ||
+                    PY_COMPAT_COMPARE(o_decode, "latin1") ||
+                    PY_COMPAT_COMPARE(o_decode, "LATIN1") ||
+                    PY_COMPAT_COMPARE(o_decode, "Latin1"))
             {
                 decode = DECODE_LATIN1;
             }
