@@ -1,3 +1,7 @@
+2016.10.13, Version 0.0.6 (BETA)
+
+    - Added C compatibility for Python2
+
 2016.10.03, Version 0.0.5 (BETA)
 
     - Support for Byte-Array in unpack() method.
