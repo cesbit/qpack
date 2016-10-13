@@ -134,7 +134,7 @@ case DECODE_UTF8:                                       \
     obj = PY_DECODEUTF8(*pt, size, NULL);        \
     break;                                              \
 case DECODE_LATIN1:                                     \
-    obj = PyUnicode_DecodeLatin1(*pt, size, NULL);      \
+    obj = PY_DECODELATIN1(*pt, size, NULL);      \
     break;                                              \
 }                                                       \
 (*pt) += size;                                          \
