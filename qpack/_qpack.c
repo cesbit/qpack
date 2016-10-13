@@ -440,10 +440,19 @@ static int packb(PyObject * obj, packer_t * packer)
         return 0;
     }
 
+#if PY_MAJOR_VERSION >= 3
     if (PyLong_Check(obj))
     {
         /* An Overflow Error might be raised */
         int64_t i64 = PyLong_AsLongLong(obj);
+#else
+    if (PyLong_Check(obj) || PyInt_Check(obj))
+    {
+        /* An Overflow Error might be raised */
+        int64_t i64 = PyLong_Check(obj) ?
+                PyLong_AsLongLong(obj) : (long long) PyInt_AsLong(obj);
+
+#endif
         int8_t i8;
         if ((i8 = i64) == i64)
         {
@@ -623,7 +632,11 @@ static PyObject * unpackb(
     case 61:
     case 62:
     case 63:
+#if PY_MAJOR_VERSION >= 3
         obj = PyLong_FromLong((long) tp);
+#else
+        obj = PyInt_FromLong((long) tp);
+#endif
         return obj;
 
     case 64:
@@ -686,7 +699,11 @@ static PyObject * unpackb(
     case 121:
     case 122:
     case 123:
+#if PY_MAJOR_VERSION >= 3
         obj = PyLong_FromLong((long) 63 - tp);
+#else
+        obj = PyInt_FromLong((long) 63 - tp);
+#endif
         return obj;
 
     case 124:
