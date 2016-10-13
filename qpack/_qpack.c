@@ -12,11 +12,16 @@
 
 #define PY_COMPAT_COMPARE(obj, str) PyUnicode_CompareWithASCIIString(obj, str)
 #define PY_COMPAT_CHECK PyUnicode_Check
-
+#define PY_DECODEUTF8(pt, size, error) PyUnicode_DecodeUTF8(pt, size, error)
+#define PY_DECODELATIN1(pt, size, error) PyUnicode_DecodeLatin1(pt, size, error)
+#define PYLONG_FROMLONGLONG(integer) PyLong_FromLongLong(integer)
 #else
 
 #define PY_COMPAT_COMPARE(obj, str) strcmp(PyString_AsString(obj), str) == 0
 #define PY_COMPAT_CHECK PyString_Check
+#define PY_DECODEUTF8(pt, size, error) PyString_Decode(pt, size, "utf-8", error)
+#define PY_DECODELATIN1(pt, size, error) PyString_Decode(pt, size, "latin-1", error)
+#define PYLONG_FROMLONGLONG(integer) PyInt_FromSize_t((size_t) integer)
 
 #endif
 
@@ -126,7 +131,7 @@ case DECODE_NONE:                                       \
     obj = PyBytes_FromStringAndSize(*pt, size);         \
     break;                                              \
 case DECODE_UTF8:                                       \
-    obj = PyUnicode_DecodeUTF8(*pt, size, NULL);        \
+    obj = PY_DECODEUTF8(*pt, size, NULL);        \
     break;                                              \
 case DECODE_LATIN1:                                     \
     obj = PyUnicode_DecodeLatin1(*pt, size, NULL);      \
@@ -148,7 +153,7 @@ return obj;
     UNPACK_CHECK_SZ(sizeof(intx_t))                     \
     long long integer = (long long) *((intx_t *) *pt);  \
     (*pt) += sizeof(intx_t);                            \
-    obj = PyLong_FromLongLong(integer);                 \
+    obj = PYLONG_FROMLONGLONG(integer);                 \
     return obj;                                         \
 }
 
