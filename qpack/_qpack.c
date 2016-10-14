@@ -7,19 +7,18 @@
 #include <Python.h>
 #include <inttypes.h>
 #include <stddef.h>
+#include <py3c.h>
 
 #if PY_MAJOR_VERSION >= 3
 
 #define PY_COMPAT_COMPARE(obj, str) PyUnicode_CompareWithASCIIString(obj, str)
 #define PY_COMPAT_CHECK PyUnicode_Check
-#define PY_DECODEUTF8(pt, size, error) PyUnicode_DecodeUTF8(pt, size, error)
 #define PY_DECODELATIN1(pt, size, error) PyUnicode_DecodeLatin1(pt, size, error)
 #define PYLONG_FROMLONGLONG(integer) PyLong_FromLongLong(integer)
 #else
 
 #define PY_COMPAT_COMPARE(obj, str) strcmp(PyString_AsString(obj), str) == 0
 #define PY_COMPAT_CHECK PyString_Check
-#define PY_DECODEUTF8(pt, size, error) PyString_Decode(pt, size, "utf-8", error)
 #define PY_DECODELATIN1(pt, size, error) PyString_Decode(pt, size, "latin-1", error)
 #define PYLONG_FROMLONGLONG(integer) PyInt_FromSize_t((size_t) integer)
 
@@ -131,10 +130,10 @@ case DECODE_NONE:                                       \
     obj = PyBytes_FromStringAndSize(*pt, size);         \
     break;                                              \
 case DECODE_UTF8:                                       \
-    obj = PY_DECODEUTF8(*pt, size, NULL);        \
+    obj = PyUnicode_DecodeUTF8(*pt, size, NULL);        \
     break;                                              \
 case DECODE_LATIN1:                                     \
-    obj = PY_DECODELATIN1(*pt, size, NULL);      \
+    obj = PyUnicode_DecodeLatin1(*pt, size, NULL);      \
     break;                                              \
 }                                                       \
 (*pt) += size;                                          \
@@ -532,18 +531,29 @@ static int packb(PyObject * obj, packer_t * packer)
         return 0;
     }
 
-    if (PY_COMPAT_CHECK(obj))
+#if PY_MAJOR_VERSION >= 3
+    if (PyUnicode_Check(obj))
     {
         Py_ssize_t size;
-#if PY_MAJOR_VERSION >= 3
         char * raw = PyUnicode_AsUTF8AndSize(obj, &size);
         return (raw == NULL) ? -1 : add_raw(packer, raw, size);
+    }
 #else
+    if (PyUnicode_Check(obj))
+    {
+        Py_ssize_t size;
+        char * raw = PyStr_AsUTF8AndSize(obj, &size);
+        return (raw == NULL) ? -1 : add_raw(packer, raw, size);
+    }
+
+    if (PyString_Check(obj))
+    {
+        Py_ssize_t size;
         char * raw;
         return (PyString_AsStringAndSize(obj, &raw, &size) == -1) ?
                 -1 : add_raw(packer, raw, size);
-#endif
     }
+#endif
 
     if (PyBytes_Check(obj))
     {
