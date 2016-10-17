@@ -7,7 +7,6 @@
 #include <Python.h>
 #include <inttypes.h>
 #include <stddef.h>
-#include <py3c.h>
 
 #if PY_MAJOR_VERSION >= 3
 
@@ -541,9 +540,24 @@ static int packb(PyObject * obj, packer_t * packer)
 #else
     if (PyUnicode_Check(obj))
     {
-        Py_ssize_t size;
-        char * raw = PyStr_AsUTF8AndSize(obj, &size);
-        return (raw == NULL) ? -1 : add_raw(packer, raw, size);
+        PyObject * tmp = PyUnicode_AsUTF8String(obj);
+        if (tmp == NULL)
+        {
+            return -1;
+        }
+
+        Py_ssize_t size = PyString_Size(tmp);
+        char * raw = PyString_AsString(tmp);
+
+        if (raw == NULL)
+        {
+            return -1;
+        }
+
+        int rc = add_raw(packer, raw, size);
+        Py_DECREF(tmp);
+
+        return rc;
     }
 
     if (PyString_Check(obj))

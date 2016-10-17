@@ -1,3 +1,7 @@
+2016.10.17, Version 0.0.10 (BETA)
+
+    - Removed p3c dependency
+
 2016.10.14, Version 0.0.9 (BETA)
 
     - Fixed unicode bug (C-module Python2 only)
