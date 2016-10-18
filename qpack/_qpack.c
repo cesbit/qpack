@@ -5,7 +5,6 @@
  *      Author: Jeroen van der Heijden
  */
 #include <Python.h>
-#include <inttypes.h>
 #include <stddef.h>
 
 #if PY_MAJOR_VERSION >= 3
@@ -342,8 +341,9 @@ static int packb(PyObject * obj, packer_t * packer)
         if (size < 6)
         {
             packer->buffer[packer->len++] = QP_ARRAY0 + size;
+            Py_ssize_t i;
 
-            for (Py_ssize_t i = 0; i < size; i++)
+            for (i = 0; i < size; i++)
             {
                 if (packb(PyList_GET_ITEM(obj, i), packer))
                 {
@@ -354,7 +354,9 @@ static int packb(PyObject * obj, packer_t * packer)
         else
         {
             packer->buffer[packer->len++] = QP_ARRAY_OPEN;
-            for (Py_ssize_t i = 0; i < size; i++)
+            Py_ssize_t i;
+
+            for (i = 0; i < size; i++)
             {
                 if (packb(PyList_GET_ITEM(obj, i), packer))
                 {
@@ -376,8 +378,9 @@ static int packb(PyObject * obj, packer_t * packer)
         if (size < 6)
         {
             packer->buffer[packer->len++] = QP_ARRAY0 + size;
+            Py_ssize_t i;
 
-            for (Py_ssize_t i = 0; i < size; i++)
+            for (i = 0; i < size; i++)
             {
                 if (packb(PyTuple_GET_ITEM(obj, i), packer))
                 {
@@ -388,7 +391,9 @@ static int packb(PyObject * obj, packer_t * packer)
         else
         {
             packer->buffer[packer->len++] = QP_ARRAY_OPEN;
-            for (Py_ssize_t i = 0; i < size; i++)
+            Py_ssize_t i;
+
+            for (i = 0; i < size; i++)
             {
                 if (packb(PyTuple_GET_ITEM(obj, i), packer))
                 {
@@ -888,7 +893,8 @@ static PyObject * unpackb(
             obj = PyList_New(size);
             if (obj != NULL)
             {
-                for (Py_ssize_t i = 0; i < size; i++)
+                Py_ssize_t i;
+                for (i = 0; i < size; i++)
                 {
                     UNPACK_CHECK_SZ(0)
 
