@@ -5,8 +5,8 @@
  *      Author: Jeroen van der Heijden
  */
 #include <Python.h>
-#include <inttypes.h>
 #include <stddef.h>
+#include "inttypes.h"
 
 #if PY_MAJOR_VERSION >= 3
 
