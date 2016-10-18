@@ -6,7 +6,21 @@ import sys
 import struct
 
 # for being Python2 and Python3 compatible
-PY_CONVERT = ord if sys.version_info[0] == 2 else int
+if sys.version_info[0] == 3:
+    PYTHON3 = True
+    PY_CONVERT = int
+    INT_TYPES = int
+    STR = str
+    def dict_items(d):
+        return d.items()
+else:
+    PYTHON3 = False
+    PY_CONVERT = ord
+    INT_TYPES = (int, long)
+    STR = (unicode, str)
+    range = xrange
+    def dict_items(d):
+        return d.iteritems()
 
 SIZE8_T = struct.Struct('<B')
 SIZE16_T = struct.Struct('<H')
@@ -96,7 +110,7 @@ def _pack(obj, container):
     elif obj is None:
         container.append(QP_NULL)
 
-    elif isinstance(obj, int):
+    elif isinstance(obj, INT_TYPES):
         if 64 > obj >= 0:
             container.append(struct.pack("B", obj))
             return
@@ -133,7 +147,7 @@ def _pack(obj, container):
             container.append(QP_DOUBLE)
             container.append(DOUBLE.pack(obj))
 
-    elif isinstance(obj, str):
+    elif isinstance(obj, STR):
         b = obj.encode('utf-8')
         l = len(b)
         if l < 100:
@@ -194,12 +208,12 @@ def _pack(obj, container):
         l = len(obj)
         if l < 6:
             container.append(SIZE8_T.pack(START_MAP + l))
-            for key, value in obj.items():
+            for key, value in dict_items(obj):
                 _pack(key, container)
                 _pack(value, container)
         else:
             container.append(QP_OPEN_MAP)
-            for key, value in obj.items():
+            for key, value in dict_items(obj):
                 _pack(key, container)
                 _pack(value, container)
             container.append(QP_CLOSE_MAP)
@@ -286,6 +300,10 @@ def unpackb(qp, decode=None):
 
 
 if __name__ == '__main__':
-    pass
+    obj = {'Test': [-1, 0, 1, 20130206, 3.6, True, False, None], 'Ok?': 1.0}
+    packed = packb(obj)
+    unpacked = unpackb(packed, decode='utf-8' if PYTHON3 else None)
+    print(obj)
+    print(unpacked)
 
 

@@ -9,7 +9,7 @@ module = Extension(
     sources = ['./qpack/_qpack.c']
 )
 
-VERSION = '0.0.11'
+VERSION = '0.0.12'
 
 setup(
     name='qpack',

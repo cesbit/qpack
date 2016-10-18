@@ -453,7 +453,7 @@ static int packb(PyObject * obj, packer_t * packer)
     {
         /* An Overflow Error might be raised */
         int64_t i64 = PyLong_Check(obj) ?
-                PyLong_AsLongLong(obj) : (long long) PyInt_AsLong(obj);
+                (int64_t) PyLong_AsLongLong(obj) : (int64_t) PyInt_AsLong(obj);
 
 #endif
         int8_t i8;
@@ -1208,8 +1208,6 @@ static PyObject * _qpack_unpackb(
                 "unpackb(), a bytes-like object is required");
         return NULL;
     }
-
-
 
     unpacked = unpackb(&buffer, buffer + size, decode);
 
