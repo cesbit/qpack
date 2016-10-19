@@ -278,7 +278,7 @@ static int add_raw(packer_t * packer, const char * buffer, Py_ssize_t size)
 
     if (size < 100)
     {
-        packer->buffer[packer->len++] = 128 + size;
+        packer->buffer[packer->len++] = 128 + (char) size;
     }
     else if (size < 256)
     {
@@ -346,7 +346,7 @@ static int packb(PyObject * obj, packer_t * packer)
         if (size < 6)
         {
             Py_ssize_t i;
-            packer->buffer[packer->len++] = (char) QP_ARRAY0 + size;
+            packer->buffer[packer->len++] = QP_ARRAY0 + (char) size;
 
             for (i = 0; i < size; i++)
             {
@@ -384,7 +384,7 @@ static int packb(PyObject * obj, packer_t * packer)
         if (size < 6)
         {
             Py_ssize_t i;
-            packer->buffer[packer->len++] = (char) QP_ARRAY0 + size;
+            packer->buffer[packer->len++] = QP_ARRAY0 + (char) size;
 
             for (i = 0; i < size; i++)
             {
@@ -424,7 +424,7 @@ static int packb(PyObject * obj, packer_t * packer)
 
         if (size < 6)
         {
-            packer->buffer[packer->len++] = (char) QP_MAP0 + size;
+            packer->buffer[packer->len++] = QP_MAP0 + (char) size;
             while (PyDict_Next(obj, &pos, &key, &value))
             {
                 if (packb(key, packer) || packb(value, packer))
@@ -1135,6 +1135,7 @@ static PyObject * _qpack_unpackb(
     PyObject * unpacked;
     Py_ssize_t size;
     decode_t decode = DECODE_NONE;
+    char * buffer;
 
     size = PyTuple_GET_SIZE(args);
 
@@ -1198,8 +1199,6 @@ static PyObject * _qpack_unpackb(
             return NULL;
         }
     }
-
-    char * buffer;
 
     if (PyBytes_Check(obj))
     {
