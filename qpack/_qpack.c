@@ -100,9 +100,10 @@ typedef struct
 #define PACKER_RESIZE(LEN)                                              \
 if (packer->len + LEN > packer->size)                                   \
 {                                                                       \
+    char * tmp;                                                         \
     packer->size = ((packer->len + LEN) / DEFAULT_ALLOC_SZ + 1)         \
             * DEFAULT_ALLOC_SZ;                                         \
-    char * tmp = (char *) realloc(packer->buffer, packer->size);        \
+    tmp = (char *) realloc(packer->buffer, packer->size);               \
     if (tmp == NULL)                                                    \
     {                                                                   \
         PyErr_SetString(PyExc_MemoryError, "Memory allocation error");  \
@@ -147,8 +148,9 @@ return obj;
 
 #define UNPACK_INT(intx_t)                              \
 {                                                       \
+    long long integer;                                  \
     UNPACK_CHECK_SZ(sizeof(intx_t))                     \
-    long long integer = (long long) *((intx_t *) *pt);  \
+    integer = (long long) *((intx_t *) *pt);  \
     (*pt) += sizeof(intx_t);                            \
     obj = PYLONG_FROMLONGLONG(integer);                 \
     return obj;                                         \
@@ -335,13 +337,14 @@ static int packb(PyObject * obj, packer_t * packer)
 
     if (PyList_Check(obj))
     {
+        Py_ssize_t size;
         PACKER_RESIZE(1)
 
-        Py_ssize_t size = PyList_GET_SIZE(obj);
+        size = PyList_GET_SIZE(obj);
         if (size < 6)
         {
-            packer->buffer[packer->len++] = QP_ARRAY0 + size;
             Py_ssize_t i;
+            packer->buffer[packer->len++] = QP_ARRAY0 + size;
 
             for (i = 0; i < size; i++)
             {
@@ -353,8 +356,8 @@ static int packb(PyObject * obj, packer_t * packer)
         }
         else
         {
-            packer->buffer[packer->len++] = QP_ARRAY_OPEN;
             Py_ssize_t i;
+            packer->buffer[packer->len++] = QP_ARRAY_OPEN;
 
             for (i = 0; i < size; i++)
             {
@@ -372,13 +375,14 @@ static int packb(PyObject * obj, packer_t * packer)
 
     if (PyTuple_Check(obj))
     {
+        Py_ssize_t size;
         PACKER_RESIZE(1)
 
-        Py_ssize_t size = PyTuple_GET_SIZE(obj);
+        size = PyTuple_GET_SIZE(obj);
         if (size < 6)
         {
-            packer->buffer[packer->len++] = QP_ARRAY0 + size;
             Py_ssize_t i;
+            packer->buffer[packer->len++] = QP_ARRAY0 + size;
 
             for (i = 0; i < size; i++)
             {
@@ -390,8 +394,8 @@ static int packb(PyObject * obj, packer_t * packer)
         }
         else
         {
-            packer->buffer[packer->len++] = QP_ARRAY_OPEN;
             Py_ssize_t i;
+            packer->buffer[packer->len++] = QP_ARRAY_OPEN;
 
             for (i = 0; i < size; i++)
             {
@@ -409,12 +413,12 @@ static int packb(PyObject * obj, packer_t * packer)
 
     if (PyDict_Check(obj))
     {
-        PACKER_RESIZE(1)
-
         PyObject * key;
         PyObject * value;
         Py_ssize_t pos = 0;
         Py_ssize_t size = PyDict_Size(obj);
+
+        PACKER_RESIZE(1)
 
         if (size < 6)
         {
@@ -457,6 +461,9 @@ static int packb(PyObject * obj, packer_t * packer)
 
 #endif
         int8_t i8;
+        int16_t i16;
+        int32_t i32;
+
         if ((i8 = (int8_t) i64) == i64)
         {
             PACKER_RESIZE(2)
@@ -476,7 +483,7 @@ static int packb(PyObject * obj, packer_t * packer)
             }
             return 0;
         }
-        int16_t i16;
+
         if ((i16 = (int16_t) i64) == i64)
         {
             PACKER_RESIZE(3)
@@ -486,7 +493,7 @@ static int packb(PyObject * obj, packer_t * packer)
             packer->len += sizeof(int16_t);
             return 0;
         }
-        int32_t i32;
+
         if ((i32 = (int32_t) i64) == i64)
         {
             PACKER_RESIZE(5)
@@ -545,21 +552,24 @@ static int packb(PyObject * obj, packer_t * packer)
 #else
     if (PyUnicode_Check(obj))
     {
+        Py_ssize_t size;
+        char * raw;
+        int rc;
         PyObject * tmp = PyUnicode_AsUTF8String(obj);
         if (tmp == NULL)
         {
             return -1;
         }
 
-        Py_ssize_t size = PyString_Size(tmp);
-        char * raw = PyString_AsString(tmp);
+        size = PyString_Size(tmp);
+        raw = PyString_AsString(tmp);
 
         if (raw == NULL)
         {
             return -1;
         }
 
-        int rc = add_raw(packer, raw, size);
+        rc = add_raw(packer, raw, size);
         Py_DECREF(tmp);
 
         return rc;
