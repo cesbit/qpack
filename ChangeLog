@@ -1,6 +1,8 @@
-2016.x.x, Version 0.0.12 (BETA)
+2016.10.19, Version 0.0.12 (BETA)
 
     - Fixed Python2 bugs in fallback.py
+    - Strict C99
+    - Fixed minor bugs for compiling on Windows platform
 
 2016.10.18, Version 0.0.11 (BETA)
 
