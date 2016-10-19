@@ -6,6 +6,7 @@
  */
 #include <Python.h>
 #include <stddef.h>
+#include "inttypes.h"
 
 #if PY_MAJOR_VERSION >= 3
 
@@ -140,8 +141,9 @@ return obj;
 
 #define UNPACK_FIXED_RAW(uintx_t)                       \
 {                                                       \
+    Py_ssize_t size;
     UNPACK_CHECK_SZ(sizeof(uintx_t))                    \
-    Py_ssize_t size = (Py_ssize_t) *((uintx_t *) *pt);  \
+    size = (Py_ssize_t) *((uintx_t *) *pt);  \
     (*pt) += sizeof(uintx_t);                           \
     UNPACK_RAW(size)                                    \
 }
@@ -344,7 +346,7 @@ static int packb(PyObject * obj, packer_t * packer)
         if (size < 6)
         {
             Py_ssize_t i;
-            packer->buffer[packer->len++] = QP_ARRAY0 + size;
+            packer->buffer[packer->len++] = (char) QP_ARRAY0 + size;
 
             for (i = 0; i < size; i++)
             {
@@ -382,7 +384,7 @@ static int packb(PyObject * obj, packer_t * packer)
         if (size < 6)
         {
             Py_ssize_t i;
-            packer->buffer[packer->len++] = QP_ARRAY0 + size;
+            packer->buffer[packer->len++] = (char) QP_ARRAY0 + size;
 
             for (i = 0; i < size; i++)
             {
@@ -422,7 +424,7 @@ static int packb(PyObject * obj, packer_t * packer)
 
         if (size < 6)
         {
-            packer->buffer[packer->len++] = QP_MAP0 + size;
+            packer->buffer[packer->len++] = (char) QP_MAP0 + size;
             while (PyDict_Next(obj, &pos, &key, &value))
             {
                 if (packb(key, packer) || packb(value, packer))
