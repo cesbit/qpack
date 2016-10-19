@@ -141,9 +141,9 @@ return obj;
 
 #define UNPACK_FIXED_RAW(uintx_t)                       \
 {                                                       \
-    Py_ssize_t size;
+    Py_ssize_t size;                                    \
     UNPACK_CHECK_SZ(sizeof(uintx_t))                    \
-    size = (Py_ssize_t) *((uintx_t *) *pt);  \
+    size = (Py_ssize_t) *((uintx_t *) *pt);             \
     (*pt) += sizeof(uintx_t);                           \
     UNPACK_RAW(size)                                    \
 }
@@ -152,7 +152,7 @@ return obj;
 {                                                       \
     long long integer;                                  \
     UNPACK_CHECK_SZ(sizeof(intx_t))                     \
-    integer = (long long) *((intx_t *) *pt);  \
+    integer = (long long) *((intx_t *) *pt);            \
     (*pt) += sizeof(intx_t);                            \
     obj = PYLONG_FROMLONGLONG(integer);                 \
     return obj;                                         \
