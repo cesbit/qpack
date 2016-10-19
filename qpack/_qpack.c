@@ -1030,7 +1030,7 @@ static PyObject * unpackb(
         {
             int rc;
             PyObject * key;
-            PyObject * value;
+            PyObject * value = NULL;
             obj = PyDict_New();
             if (obj != NULL)
             {
