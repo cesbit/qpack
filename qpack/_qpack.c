@@ -457,7 +457,7 @@ static int packb(PyObject * obj, packer_t * packer)
 
 #endif
         int8_t i8;
-        if ((i8 = i64) == i64)
+        if ((i8 = (int8_t) i64) == i64)
         {
             PACKER_RESIZE(2)
 
@@ -477,7 +477,7 @@ static int packb(PyObject * obj, packer_t * packer)
             return 0;
         }
         int16_t i16;
-        if ((i16 = i64) == i64)
+        if ((i16 = (int16_t) i64) == i64)
         {
             PACKER_RESIZE(3)
 
@@ -487,7 +487,7 @@ static int packb(PyObject * obj, packer_t * packer)
             return 0;
         }
         int32_t i32;
-        if ((i32 = i64) == i64)
+        if ((i32 = (int32_t) i64) == i64)
         {
             PACKER_RESIZE(5)
 
