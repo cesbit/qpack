@@ -1,42 +1,42 @@
 2016.10.19, Version 0.0.12 (BETA)
 
-    - Fixed Python2 bugs in fallback.py
-    - Strict C99
-    - Fixed minor bugs for compiling on Windows platform
+  * Fixed Python2 bugs in fallback.py
+  * Strict C99
+  * Fixed minor bugs for compiling on Windows platform
 
 2016.10.18, Version 0.0.11 (BETA)
 
-    - Removed fallback print line
-    - Removed inttypes.h dependency
-    - No declarations in for-loop
+  * Removed fallback print line
+  * Removed inttypes.h dependency
+  * No declarations in for-loop
 
 2016.10.17, Version 0.0.10 (BETA)
 
-    - Removed p3c dependency
+  * Removed p3c dependency
 
 2016.10.14, Version 0.0.9 (BETA)
 
-    - Fixed unicode bug (C-module Python2 only)
+  * Fixed unicode bug (C-module Python2 only)
 
 2016.10.13, Version 0.0.8 (BETA)
 
-    - Fixed compile bug (C-module Python2)
+  * Fixed compile bug (C-module Python2)
 
 2016.10.13, Version 0.0.7 (BETA)
 
-    - Fixed Latin-1 decoding (C-module Python2)
+  * Fixed Latin-1 decoding (C-module Python2)
 
 2016.10.13, Version 0.0.6 (BETA)
 
-    - Added C module for Python 2 support
+  * Added C module for Python 2 support
 
 2016.10.03, Version 0.0.5 (BETA)
 
-    - Support for Byte-Array in unpack() method.
-    - Fixed bug in installing this package using pip.
-    - Added C module (Only Python3 support)
+  * Support for Byte-Array in unpack() method.
+  * Fixed bug in installing this package using pip.
+  * Added C module (Only Python3 support)
 
 2016.10.02, Version 0.0.2 (BETA)
 
-    - Added support for hooks.
-    - Fixed Python 2 Compatibility bug.
+  * Added support for hooks.
+  * Fixed Python 2 Compatibility bug.
