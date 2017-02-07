@@ -152,16 +152,16 @@ def _pack(obj, container):
         l = len(b)
         if l < 100:
             container.append(struct.pack("B", 128 + l))
-        elif l < 256:
+        elif l < 0x100:
             container.append(QP_RAW8)
             container.append(SIZE8_T.pack(l))
-        elif l < 65536:
+        elif l < 0x10000:
             container.append(QP_RAW16)
             container.append(SIZE16_T.pack(l))
-        elif l < 4294967296:
+        elif l < 0x100000000:
             container.append(QP_RAW32)
             container.append(SIZE32_T.pack(l))
-        elif l < 18446744073709551616:
+        elif l < 0x10000000000000000:
             container.append(QP_RAW64)
             container.append(SIZE64_T.pack(l))
         else:
@@ -174,16 +174,16 @@ def _pack(obj, container):
         l = len(obj)
         if l < 100:
             container.append(struct.pack("B", 128 + l))
-        elif l < 256:
+        elif l < 0x100:
             container.append(QP_RAW8)
             container.append(SIZE8_T.pack(l))
-        elif l < 65536:
+        elif l < 0x10000:
             container.append(QP_RAW16)
             container.append(SIZE16_T.pack(l))
-        elif l < 4294967296:
+        elif l < 0x100000000:
             container.append(QP_RAW32)
             container.append(SIZE32_T.pack(l))
-        elif l < 18446744073709551616:
+        elif l < 0x10000000000000000:
             container.append(QP_RAW64)
             container.append(SIZE64_T.pack(l))
         else:
@@ -300,10 +300,39 @@ def unpackb(qp, decode=None):
 
 
 if __name__ == '__main__':
-    obj = {'Test': [-1, 0, 1, 20130206, 3.6, True, False, None], 'Ok?': 1.0}
-    packed = packb(obj)
+    import math
+    packed = b'\xfd\x82CC\x82AN\x82VE\x82Jl\x82LE\x82S4\x82Gy\x82x2\x82xj\x828B\x82Ux\x82sw\x86secret\xf5\x87session\xf4\x84user\x84iris\x87created\xea\xaf\x8f\x99X\xff'
     unpacked = unpackb(packed, decode='utf-8' if PYTHON3 else None)
-    print(obj)
     print(unpacked)
 
+    import qpack
+    qpack.unpackb(packed)
+    packed = qpack.packb(unpacked)
+    print(packed)
+    t = {
+        's': 4,
+        't': {
+            'a': 1,
+            'U': 2,
+            'x': 3,
+            'L': 4,
+            'V': 5,
+            'G': 6,
+            'w': 7
+        },
+        'u': 5,
+        'v': 6,
+        'w': 7,
+        'x': 8,
+        'y': 9,
+        'z': 10
+    }
+    a = qpack.unpackb(qpack.packb(t), decode='utf-8')
+    print(a)
+    exit(0)
+
+    unpacked = qpack.unpackb(packed)
+    print(unpacked)
+    # print(unpacked)
+    # print(packed)
 

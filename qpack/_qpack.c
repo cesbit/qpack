@@ -1068,7 +1068,7 @@ static PyObject * unpackb(
                         Py_DECREF(obj);
                         return NULL;
                     }
-                    else if (value == &PY_MAP_CLOSE)
+                    else if (key == &PY_MAP_CLOSE)
                     {
                         break;
                     }
