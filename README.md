@@ -17,7 +17,7 @@ Installation
 From PyPI (recommend)
 
 ```
-pip install siridb-connector
+pip install qpack
 ```
 
 From source code
