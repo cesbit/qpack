@@ -2,7 +2,7 @@ QPack
 =====
 
 QPack is a fast and efficient serialization format like MessagePack.
-One key difference is flexible maps and arrays support which allows
+One key difference is flexible map and array support which allows
 to write directly to a qpack buffer without the need to know
 the size for the map or array beforehand.
 
