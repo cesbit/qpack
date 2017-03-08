@@ -41,7 +41,7 @@ typedef unsigned __int64    uint64_t;
 #define PY_COMPAT_COMPARE(obj, str) strcmp(PyString_AsString(obj), str) == 0
 #define PY_COMPAT_CHECK PyString_Check
 #define PY_DECODELATIN1(pt, size, error) PyString_Decode(pt, size, "latin-1", error)
-#define PYLONG_FROMLONGLONG(integer) PyInt_FromSize_t((size_t) integer)
+#define PYLONG_FROMLONGLONG(integer) PyInt_FromSsize_t((ssize_t) integer)
 
 #endif
 

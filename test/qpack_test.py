@@ -1,6 +1,12 @@
+import sys
 import qpack
 from qpack import fallback
 import unittest
+
+if sys.version_info[0] == 3:
+    INT_CONVERT = int
+else:
+    INT_CONVERT = ord
 
 
 class TestQpack(unittest.TestCase):
@@ -45,7 +51,7 @@ class TestQpack(unittest.TestCase):
     def _pack(self, packb):
         for inp, want in self.CASES:
             out = packb(inp)
-            self.assertEqual([int(i) for i in out], want)
+            self.assertEqual([INT_CONVERT(i) for i in out], want)
 
     def _unpack(self, unpackb):
         for inp, want in self.CASES:
