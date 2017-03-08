@@ -626,6 +626,12 @@ static PyObject * unpackb(
 {
     PyObject * obj;
 
+    if (*pt >= end)
+    {
+        PyErr_SetString(PyExc_ValueError, "unpackb() is missing data");
+        return NULL;
+    }
+
     uint8_t tp = **pt;
     (*pt)++;
 
@@ -930,8 +936,6 @@ static PyObject * unpackb(
                 Py_ssize_t i;
                 for (i = 0; i < size; i++)
                 {
-                    UNPACK_CHECK_SZ(0)
-
                     o = unpackb(pt, end, decode);
 
                     if (o == NULL || Py_QPackCHECK(o))
@@ -962,8 +966,6 @@ static PyObject * unpackb(
             {
                 while (size--)
                 {
-                    UNPACK_CHECK_SZ(0)
-
                     key = unpackb(pt, end, decode);
 
                     if (key == NULL || Py_QPackCHECK(key))
@@ -972,8 +974,6 @@ static PyObject * unpackb(
                         Py_DECREF(obj);
                         return NULL;
                     }
-
-                    UNPACK_CHECK_SZ(0)
 
                     value = unpackb(pt, end, decode);
 
@@ -1020,8 +1020,6 @@ static PyObject * unpackb(
             {
                 while (*pt < end)
                 {
-                    UNPACK_CHECK_SZ(0)
-
                     o = unpackb(pt, end, decode);
 
                     if (o == NULL || o == &PY_MAP_CLOSE)
@@ -1058,8 +1056,6 @@ static PyObject * unpackb(
             {
                 while (*pt < end)
                 {
-                    UNPACK_CHECK_SZ(0)
-
                     key = unpackb(pt, end, decode);
 
                     if (key == NULL || key == &PY_ARRAY_CLOSE)
@@ -1072,8 +1068,6 @@ static PyObject * unpackb(
                     {
                         break;
                     }
-
-                    UNPACK_CHECK_SZ(0)
 
                     value = unpackb(pt, end, decode);
 
