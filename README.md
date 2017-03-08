@@ -6,10 +6,6 @@ One key difference is flexible map and array support which allows
 to write directly to a qpack buffer without the need to know
 the size for the map or array beforehand.
 
->Warning:
->--------
->This is still a BETA version which means the qpack format
->might change in the future.
 
 Installation
 ------------
