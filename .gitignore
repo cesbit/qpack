@@ -11,5 +11,4 @@ test.py
 *.so
 *.o
 build/
-test/
 checklist.txt
