@@ -917,7 +917,11 @@ static PyObject * unpackb(
 
     case 236:
         UNPACK_CHECK_SZ(sizeof(double))
-        obj = PyFloat_FromDouble((double) *((double *) *pt));
+        {
+            double d;
+            memcpy(&d, *pt, sizeof(double));
+            obj = PyFloat_FromDouble(d);
+        }
         (*pt) += sizeof(double);
         return obj;
 

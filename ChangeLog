@@ -2,6 +2,8 @@
 
   * Fixed unpacking negative integers using Python2.
 
+  * Replaced adding double value with a memcpy.
+
 2017.03.08, Version 0.0.14 (BETA)
 
   * Fixed checking bytes size.
