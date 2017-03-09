@@ -11,4 +11,5 @@ test.py
 *.so
 *.o
 build/
+dist/
 checklist.txt
