@@ -82,6 +82,12 @@ class TestQpack(unittest.TestCase):
             fallback.unpackb.__doc__)
         self._unpack(fallback.unpackb)
 
+    def test_packb_unsupported(self):
+        with self.assertRaises(TypeError):
+            fallback.packb({'module': sys})
+        with self.assertRaises(TypeError):
+            qpack.packb({'module': sys})
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -13,3 +13,5 @@ test.py
 build/
 dist/
 checklist.txt
+.vscode/
+qpack.egg-info/

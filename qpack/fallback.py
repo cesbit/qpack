@@ -11,6 +11,7 @@ if sys.version_info[0] == 3:
     PY_CONVERT = int
     INT_TYPES = int
     STR = str
+
     def dict_items(d):
         return d.items()
 else:
@@ -19,6 +20,7 @@ else:
     INT_TYPES = (int, long)
     STR = (unicode, str)
     range = xrange
+
     def dict_items(d):
         return d.iteritems()
 
@@ -54,10 +56,10 @@ QP_INT16 = b'\xe9'
 QP_INT32 = b'\xea'
 QP_INT64 = b'\xeb'
 
-QP_DOUBLE = b'\xec' # 236 this one is 8 bytes, reserve for 4 bytes
+QP_DOUBLE = b'\xec'  # 236 this one is 8 bytes, reserve for 4 bytes
 
 START_ARR = 237
-QP_ARRAY0 = b'\xed' # 237
+QP_ARRAY0 = b'\xed'  # 237
 QP_ARRAY1 = b'\xee'
 QP_ARRAY2 = b'\xef'
 QP_ARRAY3 = b'\xf0'
@@ -72,7 +74,7 @@ QP_MAP3 = b'\xf6'
 QP_MAP4 = b'\xf7'
 QP_MAP5 = b'\xf8'
 
-QP_BOOL_TRUE = b'\xf9' # 249
+QP_BOOL_TRUE = b'\xf9'  # 249
 QP_BOOL_FALSE = b'\xfa'
 QP_NULL = b'\xfb'
 
@@ -133,7 +135,7 @@ def _pack(obj, container):
             container.append(INT64_T.pack(obj))
         else:
             raise OverflowError(
-                'QuickPack allows up to 64bit signed integers, '
+                'qpack allows up to 64bit signed integers, '
                 'got bit length: {}'.format(bit_len))
 
     elif isinstance(obj, float):
@@ -166,7 +168,7 @@ def _pack(obj, container):
             container.append(SIZE64_T.pack(l))
         else:
             raise ValueError(
-                'raw string length too large to fit in QuickPack: {}'
+                'raw string length too large to fit in qpack: {}'
                 .format(l))
         container.append(b)
 
@@ -188,7 +190,7 @@ def _pack(obj, container):
             container.append(SIZE64_T.pack(l))
         else:
             raise ValueError(
-                'raw string length too large to fit in QuickPack: {}'
+                'raw string length too large to fit in qpack: {}'
                 .format(l))
         container.append(obj)
 
@@ -217,6 +219,10 @@ def _pack(obj, container):
                 _pack(key, container)
                 _pack(value, container)
             container.append(QP_CLOSE_MAP)
+
+    else:
+        raise TypeError(
+            'packing type {} is not supported with qpack'.format(type(obj)))
 
 
 def _unpack(qp, pos, end, decode=None):
@@ -247,7 +253,7 @@ def _unpack(qp, pos, end, decode=None):
         return end_pos, qp[pos:end_pos] if decode is None \
             else qp[pos:end_pos].decode(decode)
 
-    if tp < 0xed: # double included
+    if tp < 0xed:  # double included
         qp_type = _NUMBER_MAP[tp]
         return pos + qp_type.size, qp_type.unpack_from(qp, pos)[0]
 
@@ -284,7 +290,7 @@ def _unpack(qp, pos, end, decode=None):
             qp_map[key] = value
         return pos + 1, qp_map
 
-    raise ValueError('Error in quickpack at position {}'.format(pos))
+    raise ValueError('Error in qpack at position {}'.format(pos))
 
 
 def packb(obj):
@@ -300,39 +306,4 @@ def unpackb(qp, decode=None):
 
 
 if __name__ == '__main__':
-    import math
-    packed = b'\xfd\x82CC\x82AN\x82VE\x82Jl\x82LE\x82S4\x82Gy\x82x2\x82xj\x828B\x82Ux\x82sw\x86secret\xf5\x87session\xf4\x84user\x84iris\x87created\xea\xaf\x8f\x99X\xff'
-    unpacked = unpackb(packed, decode='utf-8' if PYTHON3 else None)
-    print(unpacked)
-
-    import qpack
-    qpack.unpackb(packed)
-    packed = qpack.packb(unpacked)
-    print(packed)
-    t = {
-        's': 4,
-        't': {
-            'a': 1,
-            'U': 2,
-            'x': 3,
-            'L': 4,
-            'V': 5,
-            'G': 6,
-            'w': 7
-        },
-        'u': 5,
-        'v': 6,
-        'w': 7,
-        'x': 8,
-        'y': 9,
-        'z': 10
-    }
-    a = qpack.unpackb(qpack.packb(t), decode='utf-8')
-    print(a)
-    exit(0)
-
-    unpacked = qpack.unpackb(packed)
-    print(unpacked)
-    # print(unpacked)
-    # print(packed)
-
+    pass

@@ -616,7 +616,11 @@ static int packb(PyObject * obj, packer_t * packer)
                 -1 : add_raw(packer, buffer, size);
     }
 
-    return 0;
+    PyErr_SetString(
+        PyExc_TypeError,
+        "packb(), trying to pack an unsupported type");
+
+    return -1;
 }
 
 static PyObject * unpackb(

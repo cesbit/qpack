@@ -3,13 +3,13 @@ from distutils.core import setup, Extension
 
 module = Extension(
     'qpack._qpack',
-    define_macros = [],
-    include_dirs = ['./qpack'],
-    libraries = [],
-    sources = ['./qpack/_qpack.c']
+    define_macros=[],
+    include_dirs=['./qpack'],
+    libraries=[],
+    sources=['./qpack/_qpack.c']
 )
 
-VERSION = '0.0.15'
+VERSION = '0.0.16`'
 
 setup(
     name='qpack',
@@ -19,9 +19,8 @@ setup(
     author='Jeroen van der Heijden',
     author_email='jeroen@transceptor.technology',
     url='https://github.com/transceptor-technology/qpack',
-    ext_modules = [module],
-    download_url=
-        'https://github.com/transceptor-technology/'
+    ext_modules=[module],
+    download_url='https://github.com/transceptor-technology/'
         'qpack/tarball/{}'.format(VERSION),
     keywords=['serializer', 'deserializer'],
     classifiers=[
