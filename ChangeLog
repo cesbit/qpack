@@ -1,6 +1,5 @@
 2017.08.15, Version 0.0.17
 
-  * Force C99 when compiling.
   * Fixed C99 compile errors and warnings.
 
 2017.08.14, Version 0.0.16
