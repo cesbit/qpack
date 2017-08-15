@@ -56,8 +56,8 @@ typedef enum
      * Values with -##- will never be returned while unpacking. For example
      * a QP_INT8 (1 byte signed integer) will be returned as QP_INT64.
      */
-    QP_END,             // at the end while unpacking
-    QP_RAW,             // raw string
+    QP_END,             /* at the end while unpacking */
+    QP_RAW,             /* raw string */
     /*
      * Both END and RAW are never actually packed but 0 and 1 are reserved
      * for positive signed integers.
@@ -67,41 +67,41 @@ typedef enum
      * Fixed negative integers from -60 till -1     [ 64...123 ]
      *
      */
-    QP_HOOK=124,        // Hook is not used by SiriDB
-    QP_DOUBLE_N1=125,   // ## double value -1.0
-    QP_DOUBLE_0,        // ## double value 0.0
-    QP_DOUBLE_1,        // ## double value 1.0
+    QP_HOOK=124,        /* Hook is not used by SiriDB */
+    QP_DOUBLE_N1=125,   /* ## double value -1.0 */
+    QP_DOUBLE_0,        /* ## double value 0.0 */
+    QP_DOUBLE_1,        /* ## double value 1.0 */
     /*
      * Fixed raw strings lengths from 0 till 99     [ 128...227 ]
      */
-    QP_RAW8=228,        // ## raw string with length < 1 byte
-    QP_RAW16,           // ## raw string with length < 1 byte
-    QP_RAW32,           // ## raw string with length < 1 byte
-    QP_RAW64,           // ## raw string with length < 1 byte
-    QP_INT8,            // ## 1 byte signed integer
-    QP_INT16,           // ## 2 byte signed integer
-    QP_INT32,           // ## 4 byte signed integer
-    QP_INT64,           // 8 bytes signed integer
-    QP_DOUBLE,          // 8 bytes double
-    QP_ARRAY0,          // empty array
-    QP_ARRAY1,          // array with 1 item
-    QP_ARRAY2,          // array with 2 items
-    QP_ARRAY3,          // array with 3 items
-    QP_ARRAY4,          // array with 4 items
-    QP_ARRAY5,          // array with 5 items
-    QP_MAP0,            // empty map
-    QP_MAP1,            // map with 1 item
-    QP_MAP2,            // map with 2 items
-    QP_MAP3,            // map with 3 items
-    QP_MAP4,            // map with 4 items
-    QP_MAP5,            // map with 5 items
-    QP_TRUE,            // boolean true
-    QP_FALSE,           // boolean false
-    QP_NULL,            // null (none, nil)
-    QP_ARRAY_OPEN,      // open a new array
-    QP_MAP_OPEN,        // open a new map
-    QP_ARRAY_CLOSE,     // close array
-    QP_MAP_CLOSE,       // close map
+    QP_RAW8=228,        /* ## raw string with length < 1 byte */
+    QP_RAW16,           /* ## raw string with length < 1 byte */
+    QP_RAW32,           /* ## raw string with length < 1 byte */
+    QP_RAW64,           /* ## raw string with length < 1 byte */
+    QP_INT8,            /* ## 1 byte signed integer */
+    QP_INT16,           /* ## 2 byte signed integer */
+    QP_INT32,           /* ## 4 byte signed integer */
+    QP_INT64,           /* 8 bytes signed integer */
+    QP_DOUBLE,          /* 8 bytes double */
+    QP_ARRAY0,          /* empty array */
+    QP_ARRAY1,          /* array with 1 item */
+    QP_ARRAY2,          /* array with 2 items */
+    QP_ARRAY3,          /* array with 3 items */
+    QP_ARRAY4,          /* array with 4 items */
+    QP_ARRAY5,          /* array with 5 items */
+    QP_MAP0,            /* empty map */
+    QP_MAP1,            /* map with 1 item */
+    QP_MAP2,            /* map with 2 items */
+    QP_MAP3,            /* map with 3 items */
+    QP_MAP4,            /* map with 4 items */
+    QP_MAP5,            /* map with 5 items */
+    QP_TRUE,            /* boolean true */
+    QP_FALSE,           /* boolean false */
+    QP_NULL,            /* null (none, nil) */
+    QP_ARRAY_OPEN,      /* open a new array */
+    QP_MAP_OPEN,        /* open a new map */
+    QP_ARRAY_CLOSE,     /* close array */
+    QP_MAP_CLOSE        /* close map */
 } qp_types_t;
 
 typedef enum
@@ -113,7 +113,7 @@ typedef enum
 
 typedef struct
 {
-    char * buffer;
+    unsigned char * buffer;
     Py_ssize_t size;
     Py_ssize_t len;
 } packer_t;
@@ -123,10 +123,10 @@ typedef struct
 #define PACKER_RESIZE(LEN)                                              \
 if (packer->len + LEN > packer->size)                                   \
 {                                                                       \
-    char * tmp;                                                         \
+    unsigned char * tmp;                                                         \
     packer->size = ((packer->len + LEN) / DEFAULT_ALLOC_SZ + 1)         \
             * DEFAULT_ALLOC_SZ;                                         \
-    tmp = (char *) realloc(packer->buffer, packer->size);               \
+    tmp = (unsigned char *) realloc(packer->buffer, packer->size);               \
     if (tmp == NULL)                                                    \
     {                                                                   \
         PyErr_SetString(PyExc_MemoryError, "Memory allocation error");  \
@@ -149,13 +149,13 @@ UNPACK_CHECK_SZ(size)                                   \
 switch(decode)                                          \
 {                                                       \
 case DECODE_NONE:                                       \
-    obj = PyBytes_FromStringAndSize(*pt, size);         \
+    obj = PyBytes_FromStringAndSize((const char *) *pt, size);         \
     break;                                              \
 case DECODE_UTF8:                                       \
-    obj = PyUnicode_DecodeUTF8(*pt, size, NULL);        \
+    obj = PyUnicode_DecodeUTF8((const char *) *pt, size, NULL);        \
     break;                                              \
 case DECODE_LATIN1:                                     \
-    obj = PyUnicode_DecodeLatin1(*pt, size, NULL);      \
+    obj = PyUnicode_DecodeLatin1((const char *) *pt, size, NULL);      \
     break;                                              \
 }                                                       \
 (*pt) += size;                                          \
@@ -216,11 +216,11 @@ static PyObject * _qpack_unpackb(
 /* other static methods */
 static packer_t * packer_new(void);
 static void packer_free(packer_t * packer);
-static int add_raw(packer_t * packer, const char * buffer, Py_ssize_t size);
+static int add_raw(packer_t * packer, const unsigned char * buffer, Py_ssize_t size);
 static int packb(PyObject * obj, packer_t * packer);
 static PyObject * unpackb(
-        char ** pt,
-        const char * const end,
+        unsigned char ** pt,
+        const unsigned char * const end,
         decode_t decode);
 
 /* Module specification */
@@ -278,7 +278,7 @@ static packer_t * packer_new(void)
     {
         packer->size = DEFAULT_ALLOC_SZ;
         packer->len = 0;
-        packer->buffer = (char *) malloc(DEFAULT_ALLOC_SZ);
+        packer->buffer = (unsigned char *) malloc(DEFAULT_ALLOC_SZ);
         if (packer->buffer == NULL)
         {
             packer_free(packer);
@@ -294,7 +294,7 @@ static void packer_free(packer_t * packer)
     free(packer);
 }
 
-static int add_raw(packer_t * packer, const char * buffer, Py_ssize_t size)
+static int add_raw(packer_t * packer, const unsigned char * buffer, Py_ssize_t size)
 {
     PACKER_RESIZE(5 + size)
 
@@ -570,14 +570,14 @@ static int packb(PyObject * obj, packer_t * packer)
     if (PyUnicode_Check(obj))
     {
         Py_ssize_t size;
-        char * raw = PyUnicode_AsUTF8AndSize(obj, &size);
+        unsigned char * raw = (unsigned char *) PyUnicode_AsUTF8AndSize(obj, &size);
         return (raw == NULL) ? -1 : add_raw(packer, raw, size);
     }
 #else
     if (PyUnicode_Check(obj))
     {
         Py_ssize_t size;
-        char * raw;
+        unsigned char * raw;
         int rc;
         PyObject * tmp = PyUnicode_AsUTF8String(obj);
         if (tmp == NULL)
@@ -602,7 +602,7 @@ static int packb(PyObject * obj, packer_t * packer)
     if (PyString_Check(obj))
     {
         Py_ssize_t size;
-        char * raw;
+        unsigned char * raw;
         return (PyString_AsStringAndSize(obj, &raw, &size) == -1) ?
                 -1 : add_raw(packer, raw, size);
     }
@@ -611,8 +611,8 @@ static int packb(PyObject * obj, packer_t * packer)
     if (PyBytes_Check(obj))
     {
         Py_ssize_t size;
-        char * buffer;
-        return (PyBytes_AsStringAndSize(obj, &buffer, &size) == -1) ?
+        unsigned char * buffer;
+        return (PyBytes_AsStringAndSize(obj, (char **) &buffer, &size) == -1) ?
                 -1 : add_raw(packer, buffer, size);
     }
 
@@ -624,11 +624,12 @@ static int packb(PyObject * obj, packer_t * packer)
 }
 
 static PyObject * unpackb(
-        char ** pt,
-        const char * const end,
+        unsigned char ** pt,
+        const unsigned char * const end,
         decode_t decode)
 {
     PyObject * obj;
+    unsigned char tp;
 
     if (*pt >= end)
     {
@@ -636,7 +637,7 @@ static PyObject * unpackb(
         return NULL;
     }
 
-    uint8_t tp = **pt;
+    tp = **pt;
     (*pt)++;
 
     switch (tp)
@@ -1142,7 +1143,7 @@ static PyObject * _qpack_packb(
     obj = PyTuple_GET_ITEM(args, 0);
 
     packed = (packb(obj, packer)) ?
-            NULL: PyBytes_FromStringAndSize(packer->buffer, packer->len);
+            NULL: PyBytes_FromStringAndSize((const char *) packer->buffer, packer->len);
 
     packer_free(packer);
     return packed;
@@ -1159,7 +1160,7 @@ static PyObject * _qpack_unpackb(
     PyObject * unpacked;
     Py_ssize_t size;
     decode_t decode = DECODE_NONE;
-    char * buffer;
+    unsigned char * buffer;
 
     size = PyTuple_GET_SIZE(args);
 
@@ -1226,14 +1227,14 @@ static PyObject * _qpack_unpackb(
 
     if (PyBytes_Check(obj))
     {
-        if (PyBytes_AsStringAndSize(obj, &buffer, &size) == -1)
+        if (PyBytes_AsStringAndSize(obj, (char **) &buffer, &size) == -1)
         {
             return NULL;  /* PyErr is set */
         }
     }
     else if (PyByteArray_Check(obj))
     {
-        buffer = PyByteArray_AS_STRING(obj);
+        buffer = (unsigned char *) PyByteArray_AS_STRING(obj);
         size = PyByteArray_GET_SIZE(obj);
     }
     else

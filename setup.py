@@ -10,16 +10,18 @@ python3 setup.py sdist upload -r pypi
 """
 import setuptools
 from distutils.core import setup, Extension
+from qpack import __version__
 
 module = Extension(
     'qpack._qpack',
     define_macros=[],
     include_dirs=['./qpack'],
     libraries=[],
-    sources=['./qpack/_qpack.c']
+    sources=['./qpack/_qpack.c'],
+    extra_compile_args=["--std=c99", "-pedantic"]
 )
 
-VERSION = '0.0.16'
+VERSION = __version__
 
 setup(
     name='qpack',
