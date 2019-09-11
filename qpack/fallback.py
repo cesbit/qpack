@@ -151,53 +151,53 @@ def _pack(obj, container):
 
     elif isinstance(obj, STR):
         b = obj.encode('utf-8')
-        l = len(b)
-        if l < 100:
-            container.append(struct.pack("B", 128 + l))
-        elif l < 0x100:
+        n = len(b)
+        if n < 100:
+            container.append(struct.pack("B", 128 + n))
+        elif n < 0x100:
             container.append(QP_RAW8)
-            container.append(SIZE8_T.pack(l))
-        elif l < 0x10000:
+            container.append(SIZE8_T.pack(n))
+        elif n < 0x10000:
             container.append(QP_RAW16)
-            container.append(SIZE16_T.pack(l))
-        elif l < 0x100000000:
+            container.append(SIZE16_T.pack(n))
+        elif n < 0x100000000:
             container.append(QP_RAW32)
-            container.append(SIZE32_T.pack(l))
-        elif l < 0x10000000000000000:
+            container.append(SIZE32_T.pack(n))
+        elif n < 0x10000000000000000:
             container.append(QP_RAW64)
-            container.append(SIZE64_T.pack(l))
+            container.append(SIZE64_T.pack(n))
         else:
             raise ValueError(
                 'raw string length too large to fit in qpack: {}'
-                .format(l))
+                .format(n))
         container.append(b)
 
     elif isinstance(obj, bytes):
-        l = len(obj)
-        if l < 100:
-            container.append(struct.pack("B", 128 + l))
-        elif l < 0x100:
+        n = len(obj)
+        if n < 100:
+            container.append(struct.pack("B", 128 + n))
+        elif n < 0x100:
             container.append(QP_RAW8)
-            container.append(SIZE8_T.pack(l))
-        elif l < 0x10000:
+            container.append(SIZE8_T.pack(n))
+        elif n < 0x10000:
             container.append(QP_RAW16)
-            container.append(SIZE16_T.pack(l))
-        elif l < 0x100000000:
+            container.append(SIZE16_T.pack(n))
+        elif n < 0x100000000:
             container.append(QP_RAW32)
-            container.append(SIZE32_T.pack(l))
-        elif l < 0x10000000000000000:
+            container.append(SIZE32_T.pack(n))
+        elif n < 0x10000000000000000:
             container.append(QP_RAW64)
-            container.append(SIZE64_T.pack(l))
+            container.append(SIZE64_T.pack(n))
         else:
             raise ValueError(
                 'raw string length too large to fit in qpack: {}'
-                .format(l))
+                .format(n))
         container.append(obj)
 
     elif isinstance(obj, (list, tuple)):
-        l = len(obj)
-        if l < 6:
-            container.append(SIZE8_T.pack(START_ARR + l))
+        n = len(obj)
+        if n < 6:
+            container.append(SIZE8_T.pack(START_ARR + n))
             for value in obj:
                 _pack(value, container)
         else:
@@ -207,9 +207,9 @@ def _pack(obj, container):
             container.append(QP_CLOSE_ARRAY)
 
     elif isinstance(obj, dict):
-        l = len(obj)
-        if l < 6:
-            container.append(SIZE8_T.pack(START_MAP + l))
+        n = len(obj)
+        if n < 6:
+            container.append(SIZE8_T.pack(START_MAP + n))
             for key, value in dict_items(obj):
                 _pack(key, container)
                 _pack(value, container)
@@ -225,7 +225,22 @@ def _pack(obj, container):
             'packing type {} is not supported with qpack'.format(type(obj)))
 
 
-def _unpack(qp, pos, end, decode=None):
+def _decode(qp, pos, end_pos, decode, ignore_decode_errors):
+    raw = qp[pos:end_pos]
+
+    if decode is None:
+        return raw
+
+    if ignore_decode_errors:
+        try:
+            raw = raw.decode(decode)
+        finally:
+            return raw
+
+    return raw.decode(decode)
+
+
+def _unpack(qp, pos, end, decode, ignore_decode_errors):
     tp = PY_CONVERT(qp[pos])
     pos += 1
     if tp < 64:
@@ -243,15 +258,13 @@ def _unpack(qp, pos, end, decode=None):
 
     if tp < 0xe4:
         end_pos = pos + (tp - 128)
-        return end_pos, qp[pos:end_pos] if decode is None \
-            else qp[pos:end_pos].decode(decode)
+        return end_pos, _decode(qp, pos, end_pos, decode, ignore_decode_errors)
 
     if tp < 0xe8:
         qp_type = _RAW_MAP[tp]
         end_pos = pos + qp_type.size + qp_type.unpack_from(qp, pos)[0]
         pos += qp_type.size
-        return end_pos, qp[pos:end_pos] if decode is None \
-            else qp[pos:end_pos].decode(decode)
+        return end_pos, _decode(qp, pos, end_pos, decode, ignore_decode_errors)
 
     if tp < 0xed:  # double included
         qp_type = _NUMBER_MAP[tp]
@@ -260,15 +273,15 @@ def _unpack(qp, pos, end, decode=None):
     if tp < 0xf3:
         qp_array = []
         for _ in range(tp - 0xed):
-            pos, value = _unpack(qp, pos, end, decode)
+            pos, value = _unpack(qp, pos, end, decode, ignore_decode_errors)
             qp_array.append(value)
         return pos, qp_array
 
     if tp < 0xf9:
         qp_map = {}
         for _ in range(tp - 0xf3):
-            pos, key = _unpack(qp, pos, end, decode)
-            pos, value = _unpack(qp, pos, end, decode)
+            pos, key = _unpack(qp, pos, end, decode, ignore_decode_errors)
+            pos, value = _unpack(qp, pos, end, decode, ignore_decode_errors)
             qp_map[key] = value
         return pos, qp_map
 
@@ -278,15 +291,15 @@ def _unpack(qp, pos, end, decode=None):
     if tp == N_OPEN_ARRAY:
         qp_array = []
         while pos < end and PY_CONVERT(qp[pos]) != N_CLOSE_ARRAY:
-            pos, value = _unpack(qp, pos, end, decode)
+            pos, value = _unpack(qp, pos, end, decode, ignore_decode_errors)
             qp_array.append(value)
         return pos + 1, qp_array
 
     if tp == N_OPEN_MAP:
         qp_map = {}
         while pos < end and PY_CONVERT(qp[pos]) != N_CLOSE_MAP:
-            pos, key = _unpack(qp, pos, end, decode)
-            pos, value = _unpack(qp, pos, end, decode)
+            pos, key = _unpack(qp, pos, end, decode, ignore_decode_errors)
+            pos, value = _unpack(qp, pos, end, decode, ignore_decode_errors)
             qp_map[key] = value
         return pos + 1, qp_map
 
@@ -300,9 +313,9 @@ def packb(obj):
     return b''.join(container)
 
 
-def unpackb(qp, decode=None):
+def unpackb(qp, decode=None, ignore_decode_errors=False):
     '''De-serialize QPack to Python. (Pure Python implementation)'''
-    return _unpack(qp, 0, len(qp), decode=decode)[1]
+    return _unpack(qp, 0, len(qp), decode, ignore_decode_errors)[1]
 
 
 if __name__ == '__main__':

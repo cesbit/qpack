@@ -2,6 +2,7 @@ import sys
 import qpack
 from qpack import fallback
 import unittest
+import pickle
 
 if sys.version_info[0] == 3:
     INT_CONVERT = int
@@ -87,6 +88,37 @@ class TestQpack(unittest.TestCase):
             fallback.packb({'module': sys})
         with self.assertRaises(TypeError):
             qpack.packb({'module': sys})
+
+    def test_decode(self):
+        bindata = pickle.dumps({})
+        data = ['normal', bindata]
+        packed = qpack.packb(data)
+        s, b = qpack.unpackb(packed)
+        self.assertEqual(type(s).__name__, 'bytes')
+        self.assertEqual(type(b).__name__, 'bytes')
+
+        with self.assertRaises(ValueError):
+            s, b = qpack.unpackb(packed, decode='utf8')
+
+        s, b = qpack.unpackb(packed, decode='utf8', ignore_decode_errors=True)
+        self.assertEqual(type(s).__name__, 'str')
+        self.assertEqual(type(b).__name__, 'bytes')
+
+    def test_fallback_decode(self):
+        bindata = pickle.dumps({})
+        data = ['normal', bindata]
+        packed = fallback.packb(data)
+        s, b = fallback.unpackb(packed)
+        self.assertEqual(type(s).__name__, 'bytes')
+        self.assertEqual(type(b).__name__, 'bytes')
+
+        with self.assertRaises(ValueError):
+            s, b = fallback.unpackb(packed, decode='utf8')
+
+        s, b = fallback.unpackb(
+            packed, decode='utf8', ignore_decode_errors=True)
+        self.assertEqual(type(s).__name__, 'str')
+        self.assertEqual(type(b).__name__, 'bytes')
 
 
 if __name__ == '__main__':

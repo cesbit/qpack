@@ -144,30 +144,40 @@ if ((*pt) + size > end)                                                 \
 }
 
 
-#define UNPACK_RAW(size)                                \
-UNPACK_CHECK_SZ(size)                                   \
-switch(decode)                                          \
-{                                                       \
-case DECODE_NONE:                                       \
-    obj = PyBytes_FromStringAndSize((const char *) *pt, size);         \
-    break;                                              \
-case DECODE_UTF8:                                       \
-    obj = PyUnicode_DecodeUTF8((const char *) *pt, size, NULL);        \
-    break;                                              \
-case DECODE_LATIN1:                                     \
-    obj = PyUnicode_DecodeLatin1((const char *) *pt, size, NULL);      \
-    break;                                              \
-}                                                       \
-(*pt) += size;                                          \
+#define UNPACK_RAW(size, __ign_derr)                                    \
+UNPACK_CHECK_SZ(size)                                                   \
+switch(decode)                                                          \
+{                                                                       \
+case DECODE_NONE:                                                       \
+    obj = PyBytes_FromStringAndSize((const char *) *pt, size);          \
+    break;                                                              \
+case DECODE_UTF8:                                                       \
+    obj = PyUnicode_DecodeUTF8((const char *) *pt, size, NULL);         \
+    if (__ign_derr && obj == NULL)                                      \
+    {                                                                   \
+        PyErr_Clear();                                                  \
+        obj = PyBytes_FromStringAndSize((const char *) *pt, size);      \
+    }                                                                   \
+    break;                                                              \
+case DECODE_LATIN1:                                                     \
+    obj = PyUnicode_DecodeLatin1((const char *) *pt, size, NULL);       \
+    if (__ign_derr && obj == NULL)                                      \
+    {                                                                   \
+        PyErr_Clear();                                                  \
+        obj = PyBytes_FromStringAndSize((const char *) *pt, size);      \
+    }                                                                   \
+    break;                                                              \
+}                                                                       \
+(*pt) += size;                                                          \
 return obj;
 
-#define UNPACK_FIXED_RAW(uintx_t)                       \
+#define UNPACK_FIXED_RAW(uintx_t, __ign_derr)           \
 {                                                       \
     Py_ssize_t size;                                    \
     UNPACK_CHECK_SZ(sizeof(uintx_t))                    \
     size = (Py_ssize_t) *((uintx_t *) *pt);             \
     (*pt) += sizeof(uintx_t);                           \
-    UNPACK_RAW(size)                                    \
+    UNPACK_RAW(size, __ign_derr)                        \
 }
 
 #define UNPACK_INT(intx_t)                              \
@@ -199,9 +209,16 @@ static char unpackb_docstring[] =
 "De-serialize QPack data to a Python object.\n"
 "\n"
 "Keyword arguments:\n"
-"    decode: Decoding used for de-serializing QPack raw data.\n"
-"            When None, all raw data will be de-serialized to Python bytes.\n"
-"            (Default value: None)";
+"    decode:\n"
+"        Decoding used for de-serializing QPack raw data.\n"
+"        When None, all raw data will be de-serialized to Python bytes.\n"
+"        (Default value: None)\n"
+"    ignore_decode_errors:\n"
+"        If this option is set to False then a `decode` exception will be\n"
+"        raised if a raw value fails to decode.\n"
+"        When set to True, a value which has failed to deocode will be\n"
+"        returned as bytes but other values are still decoded.\n"
+"        (Default value: False)";
 
 /* Available functions */
 static PyObject * _qpack_packb(
@@ -221,7 +238,8 @@ static int packb(PyObject * obj, packer_t * packer);
 static PyObject * unpackb(
         unsigned char ** pt,
         const unsigned char * const end,
-        decode_t decode);
+        decode_t decode,
+        int ignore_decode_errors);
 
 /* Module specification */
 static PyMethodDef module_methods[] =
@@ -626,7 +644,8 @@ static int packb(PyObject * obj, packer_t * packer)
 static PyObject * unpackb(
         unsigned char ** pt,
         const unsigned char * const end,
-        decode_t decode)
+        decode_t decode,
+        int ignore_decode_errors)
 {
     PyObject * obj;
     unsigned char tp;
@@ -900,16 +919,16 @@ static PyObject * unpackb(
     case 227:
         {
             Py_ssize_t size = tp - 128;
-            UNPACK_RAW(size)
+            UNPACK_RAW(size, ignore_decode_errors)
         }
     case 228:
-        UNPACK_FIXED_RAW(uint8_t)
+        UNPACK_FIXED_RAW(uint8_t, ignore_decode_errors)
     case 229:
-        UNPACK_FIXED_RAW(uint16_t)
+        UNPACK_FIXED_RAW(uint16_t, ignore_decode_errors)
     case 230:
-        UNPACK_FIXED_RAW(uint32_t)
+        UNPACK_FIXED_RAW(uint32_t, ignore_decode_errors)
     case 231:
-        UNPACK_FIXED_RAW(uint64_t)
+        UNPACK_FIXED_RAW(uint64_t, ignore_decode_errors)
 
     case 232:
         UNPACK_INT(int8_t)
@@ -945,7 +964,7 @@ static PyObject * unpackb(
                 Py_ssize_t i;
                 for (i = 0; i < size; i++)
                 {
-                    o = unpackb(pt, end, decode);
+                    o = unpackb(pt, end, decode, ignore_decode_errors);
 
                     if (o == NULL || Py_QPackCHECK(o))
                     {
@@ -975,7 +994,7 @@ static PyObject * unpackb(
             {
                 while (size--)
                 {
-                    key = unpackb(pt, end, decode);
+                    key = unpackb(pt, end, decode, ignore_decode_errors);
 
                     if (key == NULL || Py_QPackCHECK(key))
                     {
@@ -984,7 +1003,7 @@ static PyObject * unpackb(
                         return NULL;
                     }
 
-                    value = unpackb(pt, end, decode);
+                    value = unpackb(pt, end, decode, ignore_decode_errors);
 
                     if (value == NULL || Py_QPackCHECK(value))
                     {
@@ -1029,7 +1048,7 @@ static PyObject * unpackb(
             {
                 while (*pt < end)
                 {
-                    o = unpackb(pt, end, decode);
+                    o = unpackb(pt, end, decode, ignore_decode_errors);
 
                     if (o == NULL || o == &PY_MAP_CLOSE)
                     {
@@ -1065,7 +1084,7 @@ static PyObject * unpackb(
             {
                 while (*pt < end)
                 {
-                    key = unpackb(pt, end, decode);
+                    key = unpackb(pt, end, decode, ignore_decode_errors);
 
                     if (key == NULL || key == &PY_ARRAY_CLOSE)
                     {
@@ -1078,7 +1097,7 @@ static PyObject * unpackb(
                         break;
                     }
 
-                    value = unpackb(pt, end, decode);
+                    value = unpackb(pt, end, decode, ignore_decode_errors);
 
                     if (value == NULL || Py_QPackCHECK(value))
                     {
@@ -1156,11 +1175,14 @@ static PyObject * _qpack_unpackb(
 {
     PyObject * obj;
     PyObject * kw_decode;
+    PyObject * kw_ignore_decode_errors;
     PyObject * o_decode;
+    PyObject * o_ignore_decode_errors;
     PyObject * unpacked;
     Py_ssize_t size;
     decode_t decode = DECODE_NONE;
     unsigned char * buffer;
+    int ignore_decode_errors = 0;  /* false */
 
     size = PyTuple_GET_SIZE(args);
 
@@ -1177,51 +1199,58 @@ static PyObject * _qpack_unpackb(
     if (kwargs)
     {
         kw_decode = Py_BuildValue("s", "decode");
+        kw_ignore_decode_errors = Py_BuildValue("s", "ignore_decode_errors");
         o_decode = PyDict_GetItem(kwargs, kw_decode);
+        o_ignore_decode_errors = PyDict_GetItem(
+            kwargs,
+            kw_ignore_decode_errors);
+
         Py_DECREF(kw_decode);
+        Py_DECREF(kw_ignore_decode_errors);
 
-        if (o_decode == NULL)
-        {
-            PyErr_SetString(
-                    PyExc_TypeError,
-                    "unpackb() got an unexpected keyword argument");
-            return NULL;
-        }
 
-        if (PY_COMPAT_CHECK(o_decode))
+        if (o_decode != NULL)
         {
-            if (    PY_COMPAT_COMPARE(o_decode, "utf-8") ||
-                    PY_COMPAT_COMPARE(o_decode, "UTF-8") ||
-                    PY_COMPAT_COMPARE(o_decode, "Utf-8") ||
-                    PY_COMPAT_COMPARE(o_decode, "utf8") ||
-                    PY_COMPAT_COMPARE(o_decode, "UTF8") ||
-                    PY_COMPAT_COMPARE(o_decode, "Utf8"))
+            if (PY_COMPAT_CHECK(o_decode))
             {
-                decode = DECODE_UTF8;
+                if (    PY_COMPAT_COMPARE(o_decode, "utf-8") ||
+                        PY_COMPAT_COMPARE(o_decode, "UTF-8") ||
+                        PY_COMPAT_COMPARE(o_decode, "Utf-8") ||
+                        PY_COMPAT_COMPARE(o_decode, "utf8") ||
+                        PY_COMPAT_COMPARE(o_decode, "UTF8") ||
+                        PY_COMPAT_COMPARE(o_decode, "Utf8"))
+                {
+                    decode = DECODE_UTF8;
+                }
+                else if(PY_COMPAT_COMPARE(o_decode, "latin-1") ||
+                        PY_COMPAT_COMPARE(o_decode, "LATIN-1") ||
+                        PY_COMPAT_COMPARE(o_decode, "Latin-1") ||
+                        PY_COMPAT_COMPARE(o_decode, "latin1") ||
+                        PY_COMPAT_COMPARE(o_decode, "LATIN1") ||
+                        PY_COMPAT_COMPARE(o_decode, "Latin1"))
+                {
+                    decode = DECODE_LATIN1;
+                }
+                else
+                {
+                    PyErr_SetString(
+                            PyExc_LookupError,
+                            "unpackb() unsupported encoding");
+                    return NULL;
+                }
             }
-            else if(PY_COMPAT_COMPARE(o_decode, "latin-1") ||
-                    PY_COMPAT_COMPARE(o_decode, "LATIN-1") ||
-                    PY_COMPAT_COMPARE(o_decode, "Latin-1") ||
-                    PY_COMPAT_COMPARE(o_decode, "latin1") ||
-                    PY_COMPAT_COMPARE(o_decode, "LATIN1") ||
-                    PY_COMPAT_COMPARE(o_decode, "Latin1"))
-            {
-                decode = DECODE_LATIN1;
-            }
-            else
+            else if (o_decode != Py_None)
             {
                 PyErr_SetString(
                         PyExc_LookupError,
-                        "unpackb() unsupported encoding");
+                        "unpackb() decode is expecting 'None' or a 'str' object");
                 return NULL;
             }
-        }
-        else if (o_decode != Py_None)
-        {
-            PyErr_SetString(
-                    PyExc_LookupError,
-                    "unpackb() decode is expecting 'None' or a 'str' object");
-            return NULL;
+
+            if (o_ignore_decode_errors != NULL)
+            {
+                ignore_decode_errors = PyObject_IsTrue(o_ignore_decode_errors);
+            }
         }
     }
 
@@ -1245,7 +1274,7 @@ static PyObject * _qpack_unpackb(
         return NULL;
     }
 
-    unpacked = unpackb(&buffer, buffer + size, decode);
+    unpacked = unpackb(&buffer, buffer + size, decode, ignore_decode_errors);
 
     return unpacked;
 }
