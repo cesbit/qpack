@@ -1,12 +1,15 @@
 """setup.py
 
-Upload to PyPI, Thx to: http://peterdowns.com/posts/first-time-with-pypi.html
+Upload to PyPI:
 
-python3 setup.py register -r pypitest
-python3 setup.py sdist upload -r pypitest
+Build
+  python setup.py sdist bdist_wheel
 
-python3 setup.py register -r pypi
-python3 setup.py sdist upload -r pypi
+Upload to Test PyPI
+  twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+Upload to PyPI
+  twine upload dist/*
 """
 import setuptools
 from distutils.core import setup, Extension
