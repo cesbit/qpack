@@ -1002,6 +1002,10 @@ static PyObject * unpackb(
                         Py_DECREF(obj);
                         return NULL;
                     }
+                    else if (PyUnicode_CheckExact(key))
+                    {
+                        PyUnicode_InternInPlace(&key);
+                    }
 
                     value = unpackb(pt, end, decode, ignore_decode_errors);
 
@@ -1095,6 +1099,10 @@ static PyObject * unpackb(
                     else if (key == &PY_MAP_CLOSE)
                     {
                         break;
+                    }
+                    else if (PyUnicode_CheckExact(key))
+                    {
+                        PyUnicode_InternInPlace(&key);
                     }
 
                     value = unpackb(pt, end, decode, ignore_decode_errors);
