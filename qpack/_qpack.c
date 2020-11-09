@@ -42,6 +42,7 @@ typedef unsigned __int64    uint64_t;
 #define PY_COMPAT_CHECK PyString_Check
 #define PY_DECODELATIN1(pt, size, error) PyString_Decode(pt, size, "latin-1", error)
 #define PYLONG_FROMLONGLONG(integer) PyInt_FromSsize_t((ssize_t) integer)
+#define PyUnicode_InternInPlace(__straddr) (void) (__straddr)
 
 #endif
 
