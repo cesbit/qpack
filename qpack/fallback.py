@@ -283,7 +283,7 @@ def _unpack(qp, pos, end, decode, ignore_decode_errors):
         for _ in range(tp - 0xf3):
             pos, key = _unpack(qp, pos, end, decode, ignore_decode_errors)
             pos, value = _unpack(qp, pos, end, decode, ignore_decode_errors)
-            if isinstance(key, STR):
+            if isinstance(key, str):
                 intern(key)
             qp_map[key] = value
         return pos, qp_map
@@ -303,7 +303,7 @@ def _unpack(qp, pos, end, decode, ignore_decode_errors):
         while pos < end and PY_CONVERT(qp[pos]) != N_CLOSE_MAP:
             pos, key = _unpack(qp, pos, end, decode, ignore_decode_errors)
             pos, value = _unpack(qp, pos, end, decode, ignore_decode_errors)
-            if isinstance(key, STR):
+            if isinstance(key, str):
                 intern(key)
             qp_map[key] = value
         return pos + 1, qp_map

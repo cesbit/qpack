@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import qpack
 from qpack import fallback
@@ -6,14 +7,16 @@ import pickle
 
 if sys.version_info[0] == 3:
     INT_CONVERT = int
+    PYTHON3 = True
 else:
     INT_CONVERT = ord
+    PYTHON3 = False
 
 
 class TestQpack(unittest.TestCase):
 
     CASES = [
-        [" Hi Qpack", [
+        [u" Hi Qpack", [
             140, 239, 163, 159, 32, 72, 105, 32, 81, 112, 97, 99, 107]],
         [True, [249]],
         [False, [250]],
@@ -122,4 +125,14 @@ class TestQpack(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    suite = unittest.TestSuite()
+    suite.addTest(TestQpack('test_packb'))
+    suite.addTest(TestQpack('test_fallback_packb'))
+    suite.addTest(TestQpack('test_unpackb'))
+    suite.addTest(TestQpack('test_fallback_unpackb'))
+    if PYTHON3:
+        suite.addTest(TestQpack('test_decode'))
+        suite.addTest(TestQpack('test_fallback_decode'))
+
+    runner = unittest.TextTestRunner()
+    runner.run(suite)
