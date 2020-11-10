@@ -93,6 +93,8 @@ class TestQpack(unittest.TestCase):
             qpack.packb({'module': sys})
 
     def test_decode(self):
+        if not PYTHON3:
+            return
         bindata = pickle.dumps({})
         data = ['normal', bindata]
         packed = qpack.packb(data)
@@ -108,6 +110,8 @@ class TestQpack(unittest.TestCase):
         self.assertEqual(type(b).__name__, 'bytes')
 
     def test_fallback_decode(self):
+        if not PYTHON3:
+            return
         bindata = pickle.dumps({})
         data = ['normal', bindata]
         packed = fallback.packb(data)
@@ -125,14 +129,4 @@ class TestQpack(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestSuite()
-    suite.addTest(TestQpack('test_packb'))
-    suite.addTest(TestQpack('test_fallback_packb'))
-    suite.addTest(TestQpack('test_unpackb'))
-    suite.addTest(TestQpack('test_fallback_unpackb'))
-    if PYTHON3:
-        suite.addTest(TestQpack('test_decode'))
-        suite.addTest(TestQpack('test_fallback_decode'))
-
-    runner = unittest.TextTestRunner()
-    runner.run(suite)
+    unittest.main()
