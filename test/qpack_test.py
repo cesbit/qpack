@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import qpack
 from qpack import fallback
@@ -6,14 +7,16 @@ import pickle
 
 if sys.version_info[0] == 3:
     INT_CONVERT = int
+    PYTHON3 = True
 else:
     INT_CONVERT = ord
+    PYTHON3 = False
 
 
 class TestQpack(unittest.TestCase):
 
     CASES = [
-        [" Hi Qpack", [
+        [u" Hi Qpack", [
             140, 239, 163, 159, 32, 72, 105, 32, 81, 112, 97, 99, 107]],
         [True, [249]],
         [False, [250]],
@@ -90,6 +93,8 @@ class TestQpack(unittest.TestCase):
             qpack.packb({'module': sys})
 
     def test_decode(self):
+        if not PYTHON3:
+            return
         bindata = pickle.dumps({})
         data = ['normal', bindata]
         packed = qpack.packb(data)
@@ -105,6 +110,8 @@ class TestQpack(unittest.TestCase):
         self.assertEqual(type(b).__name__, 'bytes')
 
     def test_fallback_decode(self):
+        if not PYTHON3:
+            return
         bindata = pickle.dumps({})
         data = ['normal', bindata]
         packed = fallback.packb(data)
