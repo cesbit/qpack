@@ -2,14 +2,10 @@
 
 Upload to PyPI:
 
-Build
-  python setup.py sdist bdist_wheel
 
-Upload to Test PyPI
-  twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-
-Upload to PyPI
-  twine upload dist/*
+python setup.py sdist
+twine upload --repository pypitest dist/qpack-X.X.X.tar.gz
+twine upload --repository pypi dist/qpack-X.X.X.tar.gz
 """
 import setuptools
 from distutils.core import setup, Extension
