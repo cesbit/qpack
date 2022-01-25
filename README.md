@@ -1,3 +1,6 @@
+[![CI](https://github.com/transceptor-technology/qpack/workflows/CI/badge.svg)](https://github.com/transceptor-technology/qpack/actions)
+[![Release Version](https://img.shields.io/github/release/transceptor-technology/qpack)](https://github.com/transceptor-technology/qpack/releases)
+
 QPack
 =====
 

@@ -2,7 +2,6 @@
 
 Upload to PyPI:
 
-
 python setup.py sdist
 twine upload --repository pypitest dist/qpack-X.X.X.tar.gz
 twine upload --repository pypi dist/qpack-X.X.X.tar.gz
