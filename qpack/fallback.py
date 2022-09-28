@@ -1,6 +1,6 @@
 '''QPack - (de)serializer
 
-:copyright: 2016, Jeroen van der Heijden (Transceptor Technology)
+:copyright: 2022, Cesbit
 '''
 import sys
 import struct

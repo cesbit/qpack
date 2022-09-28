@@ -27,7 +27,7 @@ setup(
     version=VERSION,
     description='QPack (de)serializer',
     author='Jeroen van der Heijden',
-    author_email='jeroen@transceptor.technology',
+    author_email='jeroen@cesbit.com',
     url='https://github.com/cesbit/qpack',
     ext_modules=[module],
     download_url='https://github.com/cesbit/'
