@@ -36,7 +36,7 @@ Unpack
 Unpack serialized data. When decode is left None, each string
 will be returned as bytes.
 
-`qpack.unpackb(qp, decode=None)`
+`qpack.unpackb(qp, decode=None, ignore_decode_errors=False, use_tuples=False)`
 
 
 Example
