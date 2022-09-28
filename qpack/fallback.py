@@ -259,13 +259,13 @@ def _unpack(qp, pos, end, decode, ign_dec_err, use_tpls):
 
     if tp < 0xe4:
         end_pos = pos + (tp - 128)
-        return end_pos, _decode(qp, pos, end_pos, decode, ignore_decode_errors)
+        return end_pos, _decode(qp, pos, end_pos, decode, ign_dec_err)
 
     if tp < 0xe8:
         qp_type = _RAW_MAP[tp]
         end_pos = pos + qp_type.size + qp_type.unpack_from(qp, pos)[0]
         pos += qp_type.size
-        return end_pos, _decode(qp, pos, end_pos, decode, ignore_decode_errors)
+        return end_pos, _decode(qp, pos, end_pos, decode, ign_dec_err)
 
     if tp < 0xed:  # double included
         qp_type = _NUMBER_MAP[tp]
