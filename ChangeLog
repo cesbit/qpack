@@ -1,6 +1,7 @@
 2022.09.28, Version 0.0.20
 
   * Added `use_tuples` unpack argument (pr #5).
+  * Changed company name to Cesbit.
 
 2020.11.11, Version 0.0.19
 
