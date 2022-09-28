@@ -1112,19 +1112,9 @@ static PyObject * unpackb(
             }
             if (options->use_tuples)
             {
-                Py_ssize_t i, size = PyList_Size(obj);
-                o = PyTuple_New(size);
-                if (o != NULL)
-                {
-                    for (i = 0; i < size; i++)
-                    {
-                        PyObject * v = PyList_GetItem(obj, i);
-                        Py_INCREF(v);
-                        PyTuple_SET_ITEM(o, i, v);
-                    }
-                    Py_DECREF(obj);
-                    return o;
-                }
+                o = PyList_AsTuple(obj);
+                Py_DECREF(obj);
+                return o;
             }
             return obj;
         }
