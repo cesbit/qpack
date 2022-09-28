@@ -1,5 +1,5 @@
-[![CI](https://github.com/transceptor-technology/qpack/workflows/CI/badge.svg)](https://github.com/transceptor-technology/qpack/actions)
-[![Release Version](https://img.shields.io/github/release/transceptor-technology/qpack)](https://github.com/transceptor-technology/qpack/releases)
+[![CI](https://github.com/cesbit/qpack/workflows/CI/badge.svg)](https://github.com/cesbit/qpack/actions)
+[![Release Version](https://img.shields.io/github/release/cesbit/qpack)](https://github.com/cesbit/qpack/releases)
 
 QPack
 =====
@@ -46,7 +46,7 @@ Example
 import qpack
 
 # define some test data
-data = {'name': 'Iris', 'age': 3}
+data = {'name': 'Iris', 'age': 9}
 
 # serialize into qpack format
 qp = qpack.packb(data)

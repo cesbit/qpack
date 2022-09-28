@@ -214,6 +214,9 @@ static char unpackb_docstring[] =
 "        Decoding used for de-serializing QPack raw data.\n"
 "        When None, all raw data will be de-serialized to Python bytes.\n"
 "        (Default value: None)\n"
+"    use_tuples:\n"
+"        Decoding arrays as tuples instead of lists.\n"
+"        (Default value: False)\n"
 "    ignore_decode_errors:\n"
 "        If this option is set to False then a `decode` exception will be\n"
 "        raised if a raw value fails to decode.\n"
@@ -240,7 +243,8 @@ static PyObject * unpackb(
         unsigned char ** pt,
         const unsigned char * const end,
         decode_t decode,
-        int ignore_decode_errors);
+        int use_tuples,
+        int ignore_decode_errors,);
 
 /* Module specification */
 static PyMethodDef module_methods[] =
@@ -646,6 +650,7 @@ static PyObject * unpackb(
         unsigned char ** pt,
         const unsigned char * const end,
         decode_t decode,
+        int use_tuples,
         int ignore_decode_errors)
 {
     PyObject * obj;
@@ -959,22 +964,46 @@ static PyObject * unpackb(
         {
             PyObject * o;
             Py_ssize_t size = tp - 237;
-            obj = PyList_New(size);
-            if (obj != NULL)
+            if (use_tuples)
             {
-                Py_ssize_t i;
-                for (i = 0; i < size; i++)
+                obj = PyTuple_New(size);
+                if (obj != NULL)
                 {
-                    o = unpackb(pt, end, decode, ignore_decode_errors);
-
-                    if (o == NULL || Py_QPackCHECK(o))
+                    Py_ssize_t i;
+                    for (i = 0; i < size; i++)
                     {
-                        SET_UNEXPECTED(o)
-                        Py_DECREF(obj);
-                        return NULL;
-                    }
+                        o = unpackb(pt, end, decode, ignore_decode_errors);
 
-                    PyList_SET_ITEM(obj, i, o);
+                        if (o == NULL || Py_QPackCHECK(o))
+                        {
+                            SET_UNEXPECTED(o)
+                            Py_DECREF(obj);
+                            return NULL;
+                        }
+
+                        PyTuple_SET_ITEM(obj, i, o);
+                    }
+                }
+            }
+            else
+            {
+                obj = PyList_New(size);
+                if (obj != NULL)
+                {
+                    Py_ssize_t i;
+                    for (i = 0; i < size; i++)
+                    {
+                        o = unpackb(pt, end, decode, ignore_decode_errors);
+
+                        if (o == NULL || Py_QPackCHECK(o))
+                        {
+                            SET_UNEXPECTED(o)
+                            Py_DECREF(obj);
+                            return NULL;
+                        }
+
+                        PyList_SET_ITEM(obj, i, o);
+                    }
                 }
             }
             return obj;
@@ -1075,6 +1104,22 @@ static PyObject * unpackb(
                         Py_DECREF(obj);
                         return NULL;
                     }
+                }
+            }
+            if (use_tuples)
+            {
+                Py_ssize_t i, size = PyList_Size(obj);
+                o = PyTuple_New(size);
+                if (o != NULL)
+                {
+                    for (i = 0; i < size; i++)
+                    {
+                        PyObject * v = PyList_GetItem(obj, i);
+                        Py_INCREF(v);
+                        PyTuple_SET_ITEM(o, i, v);
+                    }
+                    Py_DECREF(obj);
+                    return o;
                 }
             }
             return obj;

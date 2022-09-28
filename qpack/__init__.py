@@ -11,6 +11,6 @@ try:
 except ImportError as ex:
     from .fallback import packb, unpackb
 
-__version_info__ = (0, 0, 19)
+__version_info__ = (0, 0, 20)
 __version__ = '.'.join(map(str, __version_info__))
 __all__ = ['packb', 'unpackb']
