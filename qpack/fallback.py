@@ -1,6 +1,6 @@
 '''QPack - (de)serializer
 
-:copyright: 2016, Jeroen van der Heijden (Transceptor Technology)
+:copyright: 2022, Cesbit
 '''
 import sys
 import struct
@@ -241,7 +241,7 @@ def _decode(qp, pos, end_pos, decode, ignore_decode_errors):
     return raw.decode(decode)
 
 
-def _unpack(qp, pos, end, decode, ignore_decode_errors):
+def _unpack(qp, pos, end, decode, ign_dec_err, use_tpls):
     tp = PY_CONVERT(qp[pos])
     pos += 1
     if tp < 64:
@@ -259,13 +259,13 @@ def _unpack(qp, pos, end, decode, ignore_decode_errors):
 
     if tp < 0xe4:
         end_pos = pos + (tp - 128)
-        return end_pos, _decode(qp, pos, end_pos, decode, ignore_decode_errors)
+        return end_pos, _decode(qp, pos, end_pos, decode, ign_dec_err)
 
     if tp < 0xe8:
         qp_type = _RAW_MAP[tp]
         end_pos = pos + qp_type.size + qp_type.unpack_from(qp, pos)[0]
         pos += qp_type.size
-        return end_pos, _decode(qp, pos, end_pos, decode, ignore_decode_errors)
+        return end_pos, _decode(qp, pos, end_pos, decode, ign_dec_err)
 
     if tp < 0xed:  # double included
         qp_type = _NUMBER_MAP[tp]
@@ -274,15 +274,15 @@ def _unpack(qp, pos, end, decode, ignore_decode_errors):
     if tp < 0xf3:
         qp_array = []
         for _ in range(tp - 0xed):
-            pos, value = _unpack(qp, pos, end, decode, ignore_decode_errors)
+            pos, value = _unpack(qp, pos, end, decode, ign_dec_err, use_tpls)
             qp_array.append(value)
-        return pos, qp_array
+        return pos, tuple(qp_array) if use_tpls else qp_array
 
     if tp < 0xf9:
         qp_map = {}
         for _ in range(tp - 0xf3):
-            pos, key = _unpack(qp, pos, end, decode, ignore_decode_errors)
-            pos, value = _unpack(qp, pos, end, decode, ignore_decode_errors)
+            pos, key = _unpack(qp, pos, end, decode, ign_dec_err, use_tpls)
+            pos, value = _unpack(qp, pos, end, decode, ign_dec_err, use_tpls)
             if isinstance(key, str):
                 intern(key)
             qp_map[key] = value
@@ -294,15 +294,15 @@ def _unpack(qp, pos, end, decode, ignore_decode_errors):
     if tp == N_OPEN_ARRAY:
         qp_array = []
         while pos < end and PY_CONVERT(qp[pos]) != N_CLOSE_ARRAY:
-            pos, value = _unpack(qp, pos, end, decode, ignore_decode_errors)
+            pos, value = _unpack(qp, pos, end, decode, ign_dec_err, use_tpls)
             qp_array.append(value)
-        return pos + 1, qp_array
+        return pos + 1, tuple(qp_array) if use_tpls else qp_array
 
     if tp == N_OPEN_MAP:
         qp_map = {}
         while pos < end and PY_CONVERT(qp[pos]) != N_CLOSE_MAP:
-            pos, key = _unpack(qp, pos, end, decode, ignore_decode_errors)
-            pos, value = _unpack(qp, pos, end, decode, ignore_decode_errors)
+            pos, key = _unpack(qp, pos, end, decode, ign_dec_err, use_tpls)
+            pos, value = _unpack(qp, pos, end, decode, ign_dec_err, use_tpls)
             if isinstance(key, str):
                 intern(key)
             qp_map[key] = value
@@ -318,9 +318,9 @@ def packb(obj):
     return b''.join(container)
 
 
-def unpackb(qp, decode=None, ignore_decode_errors=False):
+def unpackb(qp, decode=None, ignore_decode_errors=False, use_tuples=False):
     '''De-serialize QPack to Python. (Pure Python implementation)'''
-    return _unpack(qp, 0, len(qp), decode, ignore_decode_errors)[1]
+    return _unpack(qp, 0, len(qp), decode, ignore_decode_errors, use_tuples)[1]
 
 
 if __name__ == '__main__':

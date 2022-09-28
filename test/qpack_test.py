@@ -127,6 +127,18 @@ class TestQpack(unittest.TestCase):
         self.assertEqual(type(s).__name__, 'str')
         self.assertEqual(type(b).__name__, 'bytes')
 
+    def test_use_tuples(self):
+        data = tuple([('a', 'b') for _ in range(20)])
+        packed = qpack.packb(data)
+        result = qpack.unpackb(packed, decode='utf-8', use_tuples=True)
+        self.assertEqual(result, data)
+
+    def test_fallback_use_tuples(self):
+        data = tuple([('a', 'b') for _ in range(20)])
+        packed = qpack.packb(data)
+        result = fallback.unpackb(packed, decode='utf-8', use_tuples=True)
+        self.assertEqual(result, data)
+
 
 if __name__ == '__main__':
     unittest.main()

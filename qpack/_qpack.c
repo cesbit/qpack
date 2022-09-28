@@ -119,15 +119,22 @@ typedef struct
     Py_ssize_t len;
 } packer_t;
 
+typedef struct
+{
+    decode_t decode;
+    int use_tuples;
+    int ignore_decode_errors;
+} unpack_options_t;
+
 #define DEFAULT_ALLOC_SZ 65536
 
 #define PACKER_RESIZE(LEN)                                              \
 if (packer->len + LEN > packer->size)                                   \
 {                                                                       \
-    unsigned char * tmp;                                                         \
+    unsigned char * tmp;                                                \
     packer->size = ((packer->len + LEN) / DEFAULT_ALLOC_SZ + 1)         \
             * DEFAULT_ALLOC_SZ;                                         \
-    tmp = (unsigned char *) realloc(packer->buffer, packer->size);               \
+    tmp = (unsigned char *) realloc(packer->buffer, packer->size);      \
     if (tmp == NULL)                                                    \
     {                                                                   \
         PyErr_SetString(PyExc_MemoryError, "Memory allocation error");  \
@@ -145,16 +152,16 @@ if ((*pt) + size > end)                                                 \
 }
 
 
-#define UNPACK_RAW(size, __ign_derr)                                    \
+#define UNPACK_RAW(size, __options)                                     \
 UNPACK_CHECK_SZ(size)                                                   \
-switch(decode)                                                          \
+switch(__options->decode)                                               \
 {                                                                       \
 case DECODE_NONE:                                                       \
     obj = PyBytes_FromStringAndSize((const char *) *pt, size);          \
     break;                                                              \
 case DECODE_UTF8:                                                       \
     obj = PyUnicode_DecodeUTF8((const char *) *pt, size, NULL);         \
-    if (__ign_derr && obj == NULL)                                      \
+    if (__options->ignore_decode_errors && obj == NULL)                 \
     {                                                                   \
         PyErr_Clear();                                                  \
         obj = PyBytes_FromStringAndSize((const char *) *pt, size);      \
@@ -162,7 +169,7 @@ case DECODE_UTF8:                                                       \
     break;                                                              \
 case DECODE_LATIN1:                                                     \
     obj = PyUnicode_DecodeLatin1((const char *) *pt, size, NULL);       \
-    if (__ign_derr && obj == NULL)                                      \
+    if (__options->ignore_decode_errors && obj == NULL)                 \
     {                                                                   \
         PyErr_Clear();                                                  \
         obj = PyBytes_FromStringAndSize((const char *) *pt, size);      \
@@ -172,13 +179,13 @@ case DECODE_LATIN1:                                                     \
 (*pt) += size;                                                          \
 return obj;
 
-#define UNPACK_FIXED_RAW(uintx_t, __ign_derr)           \
+#define UNPACK_FIXED_RAW(uintx_t, __options)            \
 {                                                       \
     Py_ssize_t size;                                    \
     UNPACK_CHECK_SZ(sizeof(uintx_t))                    \
     size = (Py_ssize_t) *((uintx_t *) *pt);             \
     (*pt) += sizeof(uintx_t);                           \
-    UNPACK_RAW(size, __ign_derr)                        \
+    UNPACK_RAW(size, __options)                         \
 }
 
 #define UNPACK_INT(intx_t)                              \
@@ -214,6 +221,9 @@ static char unpackb_docstring[] =
 "        Decoding used for de-serializing QPack raw data.\n"
 "        When None, all raw data will be de-serialized to Python bytes.\n"
 "        (Default value: None)\n"
+"    use_tuples:\n"
+"        Decoding arrays as tuples instead of lists.\n"
+"        (Default value: False)\n"
 "    ignore_decode_errors:\n"
 "        If this option is set to False then a `decode` exception will be\n"
 "        raised if a raw value fails to decode.\n"
@@ -239,8 +249,7 @@ static int packb(PyObject * obj, packer_t * packer);
 static PyObject * unpackb(
         unsigned char ** pt,
         const unsigned char * const end,
-        decode_t decode,
-        int ignore_decode_errors);
+        unpack_options_t * options);
 
 /* Module specification */
 static PyMethodDef module_methods[] =
@@ -645,8 +654,8 @@ static int packb(PyObject * obj, packer_t * packer)
 static PyObject * unpackb(
         unsigned char ** pt,
         const unsigned char * const end,
-        decode_t decode,
-        int ignore_decode_errors)
+        unpack_options_t * options
+)
 {
     PyObject * obj;
     unsigned char tp;
@@ -920,16 +929,16 @@ static PyObject * unpackb(
     case 227:
         {
             Py_ssize_t size = tp - 128;
-            UNPACK_RAW(size, ignore_decode_errors)
+            UNPACK_RAW(size, options)
         }
     case 228:
-        UNPACK_FIXED_RAW(uint8_t, ignore_decode_errors)
+        UNPACK_FIXED_RAW(uint8_t, options)
     case 229:
-        UNPACK_FIXED_RAW(uint16_t, ignore_decode_errors)
+        UNPACK_FIXED_RAW(uint16_t, options)
     case 230:
-        UNPACK_FIXED_RAW(uint32_t, ignore_decode_errors)
+        UNPACK_FIXED_RAW(uint32_t, options)
     case 231:
-        UNPACK_FIXED_RAW(uint64_t, ignore_decode_errors)
+        UNPACK_FIXED_RAW(uint64_t, options)
 
     case 232:
         UNPACK_INT(int8_t)
@@ -959,22 +968,46 @@ static PyObject * unpackb(
         {
             PyObject * o;
             Py_ssize_t size = tp - 237;
-            obj = PyList_New(size);
-            if (obj != NULL)
+            if (options->use_tuples)
             {
-                Py_ssize_t i;
-                for (i = 0; i < size; i++)
+                obj = PyTuple_New(size);
+                if (obj != NULL)
                 {
-                    o = unpackb(pt, end, decode, ignore_decode_errors);
-
-                    if (o == NULL || Py_QPackCHECK(o))
+                    Py_ssize_t i;
+                    for (i = 0; i < size; i++)
                     {
-                        SET_UNEXPECTED(o)
-                        Py_DECREF(obj);
-                        return NULL;
-                    }
+                        o = unpackb(pt, end, options);
 
-                    PyList_SET_ITEM(obj, i, o);
+                        if (o == NULL || Py_QPackCHECK(o))
+                        {
+                            SET_UNEXPECTED(o)
+                            Py_DECREF(obj);
+                            return NULL;
+                        }
+
+                        PyTuple_SET_ITEM(obj, i, o);
+                    }
+                }
+            }
+            else
+            {
+                obj = PyList_New(size);
+                if (obj != NULL)
+                {
+                    Py_ssize_t i;
+                    for (i = 0; i < size; i++)
+                    {
+                        o = unpackb(pt, end, options);
+
+                        if (o == NULL || Py_QPackCHECK(o))
+                        {
+                            SET_UNEXPECTED(o)
+                            Py_DECREF(obj);
+                            return NULL;
+                        }
+
+                        PyList_SET_ITEM(obj, i, o);
+                    }
                 }
             }
             return obj;
@@ -995,7 +1028,7 @@ static PyObject * unpackb(
             {
                 while (size--)
                 {
-                    key = unpackb(pt, end, decode, ignore_decode_errors);
+                    key = unpackb(pt, end, options);
 
                     if (key == NULL || Py_QPackCHECK(key))
                     {
@@ -1008,7 +1041,7 @@ static PyObject * unpackb(
                         PyUnicode_InternInPlace(&key);
                     }
 
-                    value = unpackb(pt, end, decode, ignore_decode_errors);
+                    value = unpackb(pt, end, options);
 
                     if (value == NULL || Py_QPackCHECK(value))
                     {
@@ -1053,7 +1086,7 @@ static PyObject * unpackb(
             {
                 while (*pt < end)
                 {
-                    o = unpackb(pt, end, decode, ignore_decode_errors);
+                    o = unpackb(pt, end, options);
 
                     if (o == NULL || o == &PY_MAP_CLOSE)
                     {
@@ -1077,6 +1110,22 @@ static PyObject * unpackb(
                     }
                 }
             }
+            if (options->use_tuples)
+            {
+                Py_ssize_t i, size = PyList_Size(obj);
+                o = PyTuple_New(size);
+                if (o != NULL)
+                {
+                    for (i = 0; i < size; i++)
+                    {
+                        PyObject * v = PyList_GetItem(obj, i);
+                        Py_INCREF(v);
+                        PyTuple_SET_ITEM(o, i, v);
+                    }
+                    Py_DECREF(obj);
+                    return o;
+                }
+            }
             return obj;
         }
     case 253:
@@ -1089,7 +1138,7 @@ static PyObject * unpackb(
             {
                 while (*pt < end)
                 {
-                    key = unpackb(pt, end, decode, ignore_decode_errors);
+                    key = unpackb(pt, end, options);
 
                     if (key == NULL || key == &PY_ARRAY_CLOSE)
                     {
@@ -1106,7 +1155,7 @@ static PyObject * unpackb(
                         PyUnicode_InternInPlace(&key);
                     }
 
-                    value = unpackb(pt, end, decode, ignore_decode_errors);
+                    value = unpackb(pt, end, options);
 
                     if (value == NULL || Py_QPackCHECK(value))
                     {
@@ -1185,13 +1234,19 @@ static PyObject * _qpack_unpackb(
     PyObject * obj;
     PyObject * kw_decode;
     PyObject * kw_ignore_decode_errors;
+    PyObject * kw_use_tuples;
     PyObject * o_decode;
     PyObject * o_ignore_decode_errors;
+    PyObject * o_use_tuples;
     PyObject * unpacked;
     Py_ssize_t size;
-    decode_t decode = DECODE_NONE;
+
     unsigned char * buffer;
-    int ignore_decode_errors = 0;  /* false */
+    unpack_options_t options = {
+        .decode=DECODE_NONE,        /* None */
+        .ignore_decode_errors=0,    /* False */
+        .use_tuples=0,              /* False */
+    };
 
     size = PyTuple_GET_SIZE(args);
 
@@ -1209,13 +1264,18 @@ static PyObject * _qpack_unpackb(
     {
         kw_decode = Py_BuildValue("s", "decode");
         kw_ignore_decode_errors = Py_BuildValue("s", "ignore_decode_errors");
+        kw_use_tuples = Py_BuildValue("s", "use_tuples");
         o_decode = PyDict_GetItem(kwargs, kw_decode);
         o_ignore_decode_errors = PyDict_GetItem(
             kwargs,
             kw_ignore_decode_errors);
+        o_use_tuples = PyDict_GetItem(
+            kwargs,
+            kw_use_tuples);
 
         Py_DECREF(kw_decode);
         Py_DECREF(kw_ignore_decode_errors);
+        Py_DECREF(kw_use_tuples);
 
 
         if (o_decode != NULL)
@@ -1229,7 +1289,7 @@ static PyObject * _qpack_unpackb(
                         PY_COMPAT_COMPARE(o_decode, "UTF8") ||
                         PY_COMPAT_COMPARE(o_decode, "Utf8"))
                 {
-                    decode = DECODE_UTF8;
+                    options.decode = DECODE_UTF8;
                 }
                 else if(PY_COMPAT_COMPARE(o_decode, "latin-1") ||
                         PY_COMPAT_COMPARE(o_decode, "LATIN-1") ||
@@ -1238,7 +1298,7 @@ static PyObject * _qpack_unpackb(
                         PY_COMPAT_COMPARE(o_decode, "LATIN1") ||
                         PY_COMPAT_COMPARE(o_decode, "Latin1"))
                 {
-                    decode = DECODE_LATIN1;
+                    options.decode = DECODE_LATIN1;
                 }
                 else
                 {
@@ -1258,8 +1318,14 @@ static PyObject * _qpack_unpackb(
 
             if (o_ignore_decode_errors != NULL)
             {
-                ignore_decode_errors = PyObject_IsTrue(o_ignore_decode_errors);
+                options.ignore_decode_errors = \
+                    PyObject_IsTrue(o_ignore_decode_errors);
             }
+        }
+
+        if (o_use_tuples != NULL)
+        {
+            options.use_tuples = PyObject_IsTrue(o_use_tuples);
         }
     }
 
@@ -1283,7 +1349,6 @@ static PyObject * _qpack_unpackb(
         return NULL;
     }
 
-    unpacked = unpackb(&buffer, buffer + size, decode, ignore_decode_errors);
-
+    unpacked = unpackb(&buffer, buffer + size, &options);
     return unpacked;
 }

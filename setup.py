@@ -27,10 +27,10 @@ setup(
     version=VERSION,
     description='QPack (de)serializer',
     author='Jeroen van der Heijden',
-    author_email='jeroen@transceptor.technology',
-    url='https://github.com/transceptor-technology/qpack',
+    author_email='jeroen@cesbit.com',
+    url='https://github.com/cesbit/qpack',
     ext_modules=[module],
-    download_url='https://github.com/transceptor-technology/'
+    download_url='https://github.com/cesbit/'
         'qpack/tarball/{}'.format(VERSION),
     keywords=['serializer', 'deserializer'],
     classifiers=[
